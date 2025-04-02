@@ -1,13 +1,18 @@
 package com.gestaodeterritorio;
 
-/**
- * Hello world!
- *
- */
-public class App
-{
-    public static void main( String[] args )
-    {
-        System.out.println( "Hello World!" );
+import java.util.List;
+
+public class App {
+    public static void main(String[] args) {
+        try {
+            CadastroLoader loader = new CadastroLoader();
+            List<PropriedadeRustica> propriedades = loader.carregar("Madeira-Moodle.csv");
+
+            for (PropriedadeRustica p : propriedades) {
+                System.out.println(p);
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao carregar o CSV: " + e.getMessage());
+        }
     }
 }
