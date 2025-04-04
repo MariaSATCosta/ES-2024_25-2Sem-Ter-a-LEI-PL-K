@@ -7,16 +7,12 @@ public class App {
         try {
             Neo4jConnector connector = new Neo4jConnector();
 
-
             CadastroLoader loader = new CadastroLoader();
             List<PropriedadeRustica> propriedades = loader.carregar("Madeira-Moodle.csv");
 
-            for (PropriedadeRustica p : propriedades) {
-                System.out.println(p);
-                connector.addPropriedade(p);
-            }
+            connector.criarPropriedadesGrafo(propriedades);
 
-
+            connector.criarRelacoesAdjacenciaGrafo(propriedades);
 
             connector.close();
         } catch (Exception e) {

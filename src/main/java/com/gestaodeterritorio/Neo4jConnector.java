@@ -27,42 +27,65 @@ public class Neo4jConnector implements AutoCloseable {
         driver.close();
     }
 
-    public boolean propriedadeExiste(String objectId) {
-        try (Session session = driver.session()) {
-            String query = "MATCH (p:Propriedade {objectId: $objectId}) RETURN COUNT(p) > 0 AS existe";
-            return session.readTransaction(tx -> tx.run(query, Values.parameters("objectId", objectId))
-                    .single().get("existe").asBoolean());
+    public void criarPropriedadesGrafo(List<PropriedadeRustica> propriedades) {
+        if (propriedades.isEmpty()) return;
+
+        Set<String> existentes = obterPropriedadesExistentes();
+        List<PropriedadeRustica> novasPropriedades = new ArrayList<>();
+
+        for (PropriedadeRustica p : propriedades) {
+            if (!existentes.contains(p.getObjectId())) {
+                novasPropriedades.add(p);
+            }
+        }
+
+        if (!novasPropriedades.isEmpty()) {
+            inserirPropriedades(novasPropriedades);
+            System.out.println("Inseridas " + novasPropriedades.size() + " novas propriedades");
         }
     }
 
-    public void addPropriedade(PropriedadeRustica prop) {
-        if (propriedadeExiste(prop.getObjectId())) {
-            System.out.println("Propriedade já existe no grafo: " + prop.getObjectId());
-            return;
-        }
-
+    private Set<String> obterPropriedadesExistentes() {
+        Set<String> propriedades = new HashSet<>();
         try (Session session = driver.session()) {
-            String query = "CREATE (p:Propriedade {objectId: $objectId, parId: $parId, parNum: $parNum, " +
-                    "municipio: $municipio, freguesia: $freguesia, shapeArea: $shapeArea, ilha: $ilha, geometry: $geometry})";
-
-            session.writeTransaction(tx -> {
-                tx.run(query, Values.parameters(
-                        "objectId", prop.getObjectId(),
-                        "parId", prop.getParId(),
-                        "parNum", prop.getParNum(),
-                        "municipio", prop.getMunicipio(),
-                        "freguesia", prop.getFreguesia(),
-                        "shapeArea", prop.getShapeArea(),
-                        "ilha", prop.getIlha(),
-                        "geometry", prop.getGeometry()));
+            session.readTransaction(tx -> {
+                Result result = tx.run("MATCH (p:Propriedade) RETURN p.objectId AS id");
+                while (result.hasNext()) {
+                    propriedades.add(result.next().get("id").asString());
+                }
                 return null;
             });
+        }
+        return propriedades;
+    }
 
-            System.out.println("Propriedade inserida no grafo: " + prop.getObjectId());
+    private void inserirPropriedades(List<PropriedadeRustica> propriedades) {
+        try (Session session = driver.session()) {
+            session.writeTransaction(tx -> {
+                String query = "UNWIND $propriedades AS prop " +
+                        "CREATE (p:Propriedade {objectId: prop.objectId, parId: prop.parId, parNum: prop.parNum, " +
+                        "municipio: prop.municipio, freguesia: prop.freguesia, shapeArea: prop.shapeArea, ilha: prop.ilha, " +
+                        "geometry: prop.geometry})";
+                List<Value> parametros = new ArrayList<>();
+                for (PropriedadeRustica p : propriedades) {
+                    parametros.add(Values.parameters(
+                            "objectId", p.getObjectId(),
+                            "parId", p.getParId(),
+                            "parNum", p.getParNum(),
+                            "municipio", p.getMunicipio(),
+                            "freguesia", p.getFreguesia(),
+                            "shapeArea", p.getShapeArea(),
+                            "ilha", p.getIlha(),
+                            "geometry", p.getGeometry()
+                    ));
+                }
+                tx.run(query, Values.parameters("propriedades", parametros));
+                return null;
+            });
         }
     }
 
-    public void criarRelacoesAdjacencia(List<PropriedadeRustica> propriedades) {
+    public void criarRelacoesAdjacenciaGrafo(List<PropriedadeRustica> propriedades) {
         STRtree index = new STRtree();
         for (PropriedadeRustica p : propriedades) {
             Geometry g = GeoUtils.parseGeometry(p.getGeometry());
@@ -96,8 +119,10 @@ public class Neo4jConnector implements AutoCloseable {
                 }
             }
         }
-
-        inserirRelacoes(novasRelacoes);
+        if (!novasRelacoes.isEmpty()) {
+            inserirRelacoes(novasRelacoes);
+            System.out.println("Inseridas " + novasRelacoes.size() + " novas relações adjacentes");
+        }
     }
 
     private Set<String> obterRelacoesExistentes() {
@@ -117,8 +142,6 @@ public class Neo4jConnector implements AutoCloseable {
     }
 
     private void inserirRelacoes(List<String[]> novasRelacoes) {
-        if (novasRelacoes.isEmpty()) return;
-
         try (Session session = driver.session()) {
             session.writeTransaction(tx -> {
                 String query = "UNWIND $relacoes AS relacao " +
@@ -128,7 +151,6 @@ public class Neo4jConnector implements AutoCloseable {
                 return null;
             });
         }
-        System.out.println("Criadas " + novasRelacoes.size() + " relações adjacentes.");
     }
 
 }
