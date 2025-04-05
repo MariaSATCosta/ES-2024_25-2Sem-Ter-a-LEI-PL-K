@@ -10,9 +10,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Classe responsável pela integração com a base de dados Neo4j.
+ *
+ * Permite inserir propriedades rústicas como nós do grafo e estabelecer relações de adjacência entre elas,
+ * com base em operações espaciais (interseção ou contiguidade geométrica).
+ */
 public class Neo4jConnector implements AutoCloseable {
     private final Driver driver;
 
+    /**
+     * Construtor que estabelece ligação ao servidor Neo4j utilizando variáveis do ficheiro credentials.env.
+     */
     public Neo4jConnector() {
         Dotenv dotenv = Dotenv.configure().filename("credentials.env").load();
         String uri = dotenv.get("NEO4J_URI");
@@ -22,11 +31,19 @@ public class Neo4jConnector implements AutoCloseable {
         driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
     }
 
+    /**
+     * Fecha a ligação com a base de dados Neo4j.
+     */
     @Override
     public void close() {
         driver.close();
     }
 
+    /**
+     * Insere propriedades no grafo se ainda não existirem na base de dados.
+     *
+     * @param propriedades lista de propriedades a inserir
+     */
     public void criarPropriedadesGrafo(List<PropriedadeRustica> propriedades) {
         if (propriedades.isEmpty()) return;
 
@@ -45,6 +62,11 @@ public class Neo4jConnector implements AutoCloseable {
         }
     }
 
+    /**
+     * Obtém o conjunto de objectIds das propriedades já existentes no grafo.
+     *
+     * @return conjunto de objectIds existentes
+     */
     private Set<String> obterPropriedadesExistentes() {
         Set<String> propriedades = new HashSet<>();
         try (Session session = driver.session()) {
@@ -59,6 +81,11 @@ public class Neo4jConnector implements AutoCloseable {
         return propriedades;
     }
 
+    /**
+     * Insere uma lista de propriedades como nós no grafo.
+     *
+     * @param propriedades lista de propriedades a inserir
+     */
     private void inserirPropriedades(List<PropriedadeRustica> propriedades) {
         try (Session session = driver.session()) {
             session.writeTransaction(tx -> {
@@ -85,6 +112,11 @@ public class Neo4jConnector implements AutoCloseable {
         }
     }
 
+    /**
+     * Cria relações de adjacência no grafo entre propriedades cuja geometria se intersecta ou toca.
+     *
+     * @param propriedades lista de propriedades com geometria
+     */
     public void criarRelacoesAdjacenciaGrafo(List<PropriedadeRustica> propriedades) {
         STRtree index = new STRtree();
         for (PropriedadeRustica p : propriedades) {
@@ -125,6 +157,11 @@ public class Neo4jConnector implements AutoCloseable {
         }
     }
 
+    /**
+     * Obtém as relações já existentes no grafo entre propriedades.
+     *
+     * @return conjunto de pares objectId representando relações já inseridas
+     */
     private Set<String> obterRelacoesExistentes() {
         Set<String> relacoes = new HashSet<>();
         try (Session session = driver.session()) {
@@ -141,6 +178,11 @@ public class Neo4jConnector implements AutoCloseable {
         return relacoes;
     }
 
+    /**
+     * Insere novas relações de adjacência no grafo entre propriedades.
+     *
+     * @param novasRelacoes lista de pares [objectId1, objectId2] representando as relações a criar
+     */
     private void inserirRelacoes(List<String[]> novasRelacoes) {
         try (Session session = driver.session()) {
             session.writeTransaction(tx -> {
@@ -152,5 +194,4 @@ public class Neo4jConnector implements AutoCloseable {
             });
         }
     }
-
 }
