@@ -48,7 +48,7 @@ public class PropriedadeRustica {
     }
 
     /**
-     * @return o identificador do prédio/parcela
+     * @return o identificador do parcela
      */
     public String getParId() {
         return parId;
