@@ -36,3 +36,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Credentials neo4j ###
+.env
+credentials.env
