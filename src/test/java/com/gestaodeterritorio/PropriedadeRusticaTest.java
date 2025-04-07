@@ -5,24 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.reflect.Field;
 
-/**
- * Author: ${user.name}
- * Date: 2025-04-05T12:00:00   // Adjust the date/time as needed.
- *
- * Cyclomatic Complexity per method in PropriedadeRustica:
- *   - Constructor: 1
- *   - getObjectId: 1
- *   - getParId: 1
- *   - getParNum: 1
- *   - getShapeLength: 1
- *   - getShapeArea: 1
- *   - getGeometry: 1
- *   - getOwner: 1
- *   - getFreguesia: 1
- *   - getMunicipio: 1
- *   - getIlha: 1
- *   - toString: 1
- */
 public class PropriedadeRusticaTest {
 
     // Helper method to set a private field's value via reflection.

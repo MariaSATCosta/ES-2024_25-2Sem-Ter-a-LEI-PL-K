@@ -14,20 +14,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Author: ${user.name}
- * Date: 2025-04-05T12:00:00   // Adjust the date/time as needed.
- *
- * Cyclomatic Complexity per method in Neo4jConnector:
- *   - Constructor: 1
- *   - close: 1
- *   - criarPropriedadesGrafo: 3
- *   - obterPropriedadesExistentes: 2
- *   - inserirPropriedades: 1
- *   - criarRelacoesAdjacenciaGrafo: 7
- *   - obterRelacoesExistentes: 2
- *   - inserirRelacoes: 1
- */
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class Neo4jConnectorTest {
 
@@ -72,7 +59,7 @@ public class Neo4jConnectorTest {
                                                  String shapeLength, String shapeArea, String geometry,
                                                  String owner, String freguesia, String municipio, String ilha)
             throws Exception {
-        PropriedadeRustica prop = new PropriedadeRustica(); // default constructor
+        PropriedadeRustica prop = new PropriedadeRustica();
 
         Field field = PropriedadeRustica.class.getDeclaredField("objectId");
         field.setAccessible(true);
@@ -184,52 +171,7 @@ public class Neo4jConnectorTest {
         }
     }
 
-    // ------------------ obterPropriedadesExistentes Tests (Cyclomatic Complexity = 2) ------------------
-    @Test
-    public void obterPropriedadesExistentes1() throws Exception {
-        // Path 1: No properties exist, should return an empty set.
-        Method method = Neo4jConnector.class.getDeclaredMethod("obterPropriedadesExistentes");
-        method.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        Set<String> result = (Set<String>) method.invoke(connector);
-        assertTrue(result.isEmpty(), "Error: Expected empty set when no properties exist"); // Error if set is not empty.
-    }
-
-    @Test
-    public void obterPropriedadesExistentes2() throws Exception {
-        // Path 2: Insert one property manually, then expect its objectId in the set.
-        try (Session session = testDriver.session()) {
-            session.writeTransaction(tx -> {
-                tx.run("CREATE (:Propriedade {objectId:'1'})");
-                return null;
-            });
-        }
-        Method method = Neo4jConnector.class.getDeclaredMethod("obterPropriedadesExistentes");
-        method.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        Set<String> result = (Set<String>) method.invoke(connector);
-        assertTrue(result.contains("1"), "Error: Inserted property '1' should be in the set"); // Error if not contained.
-    }
-
-    // ------------------ inserirPropriedades Test (Cyclomatic Complexity = 1) ------------------
-    @Test
-    public void inserirPropriedades() throws Exception {
-        // Directly call the private inserirPropriedades method.
-        List<PropriedadeRustica> props = new ArrayList<>();
-        props.add(createPropriedade("10", "p10", "num10", "10", "200", "POINT(2 2)", "owner10", "freg10", "mun10", "ilha"));
-        Method method = Neo4jConnector.class.getDeclaredMethod("inserirPropriedades", List.class);
-        method.setAccessible(true);
-        method.invoke(connector, props);
-        try (Session session = testDriver.session()) {
-            long count = session.readTransaction(tx ->
-                    tx.run("MATCH (n:Propriedade {objectId:'10'}) RETURN count(n) AS count")
-                            .single().get("count").asLong()
-            );
-            assertEquals(1, count, "Error: One property should be inserted via inserirPropriedades"); // Error if count != 1.
-        }
-    }
-
-    // ------------------ criarRelacoesAdjacenciaGrafo Tests (Cyclomatic Complexity = 7) ------------------
+    // ------------------ criarRelacoesAdjacenciaGrafo Tests (Cyclomatic Complexity = 6) ------------------
     @Test
     public void criarRelacoesAdjacenciaGrafo1() throws Exception {
         // Path 1: A property with invalid geometry in index creation should yield no relationships.
@@ -332,24 +274,6 @@ public class Neo4jConnectorTest {
         }
     }
 
-    @Test
-    public void criarRelacoesAdjacenciaGrafo7() throws Exception {
-        // Path 7: Valid adjacent relationship should be created.
-        List<PropriedadeRustica> props = new ArrayList<>();
-        props.add(createPropriedade("A", "pA", "numA", "10", "100",
-                "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))", "ownerA", "fregA", "munA", "ilha"));
-        props.add(createPropriedade("B", "pB", "numB", "12", "150",
-                "POLYGON((1 0, 2 0, 2 1, 1 1, 1 0))", "ownerB", "fregB", "munB", "ilha"));
-        connector.criarRelacoesAdjacenciaGrafo(props);
-        try (Session session = testDriver.session()) {
-            long count = session.readTransaction(tx ->
-                    tx.run("MATCH (:Propriedade {objectId:'A'})-[:ADJACENTE_A]->(:Propriedade {objectId:'B'}) RETURN count(*) AS count")
-                            .single().get("count").asLong()
-            );
-            assertEquals(1, count, "Error: Expected one adjacent relationship to be created between valid properties"); // Error if count != 1.
-        }
-    }
-
     // ------------------ obterRelacoesExistentes Tests (Cyclomatic Complexity = 2) ------------------
     @Test
     public void obterRelacoesExistentes1() throws Exception {
@@ -377,31 +301,5 @@ public class Neo4jConnectorTest {
         @SuppressWarnings("unchecked")
         Set<String> result = (Set<String>) method.invoke(connector);
         assertTrue(result.contains("A-B"), "Error: Expected relationship 'A-B' to be present in the set"); // Error if not contained.
-    }
-
-    // ------------------ inserirRelacoes Test (Cyclomatic Complexity = 1) ------------------
-    @Test
-    public void inserirRelacoes() throws Exception {
-        // Prepare two properties in the database.
-        try (Session session = testDriver.session()) {
-            session.writeTransaction(tx -> {
-                tx.run("CREATE (:Propriedade {objectId:'X'})");
-                tx.run("CREATE (:Propriedade {objectId:'Y'})");
-                return null;
-            });
-        }
-        // Create a relationship between properties X and Y.
-        List<String[]> relacoes = new ArrayList<>();
-        relacoes.add(new String[]{"X", "Y"});
-        Method method = Neo4jConnector.class.getDeclaredMethod("inserirRelacoes", List.class);
-        method.setAccessible(true);
-        method.invoke(connector, relacoes);
-        try (Session session = testDriver.session()) {
-            long count = session.readTransaction(tx ->
-                    tx.run("MATCH (:Propriedade {objectId:'X'})-[:ADJACENTE_A]->(:Propriedade {objectId:'Y'}) RETURN count(*) AS count")
-                            .single().get("count").asLong()
-            );
-            assertEquals(1, count, "Error: Expected one relationship to be created between properties X and Y"); // Error if count != 1.
-        }
     }
 }

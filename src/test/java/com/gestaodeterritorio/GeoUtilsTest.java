@@ -4,15 +4,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.locationtech.jts.geom.Geometry;
 
-/**
- * Author: ${user.name}
- * Date: 2025-04-05T12:00:00   // Adjust as needed.
- *
- * Cyclomatic Complexity per method in GeoUtils:
- *   - Constructor: 1
- *   - parseGeometry: 2
- *   - saoAdjacentes: 3
- */
 public class GeoUtilsTest {
 
     // ------------------ Constructor Test (CC = 1) ------------------
