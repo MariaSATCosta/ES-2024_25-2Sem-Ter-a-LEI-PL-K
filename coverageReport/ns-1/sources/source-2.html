@@ -1,0 +1,147 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > CadastroLoader</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.gestaodeterritorio</a>
+</div>
+
+<h1>Coverage Summary for Class: CadastroLoader (com.gestaodeterritorio)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">CadastroLoader</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.gestaodeterritorio;
+&nbsp;
+&nbsp;import com.opencsv.bean.CsvToBean;
+&nbsp;import com.opencsv.bean.CsvToBeanBuilder;
+&nbsp;import java.io.InputStreamReader;
+&nbsp;import java.io.InputStream;
+&nbsp;import java.util.Objects;
+&nbsp;import java.io.FileReader;
+&nbsp;import java.io.Reader;
+&nbsp;import java.util.List;
+&nbsp;
+<b class="fc">&nbsp;public class CadastroLoader {</b>
+&nbsp;    public List&lt;PropriedadeRustica&gt; carregar(String nomeFicheiro) throws Exception {
+<b class="fc">&nbsp;        InputStream input = getClass().getClassLoader().getResourceAsStream(nomeFicheiro);</b>
+&nbsp;
+<b class="fc">&nbsp;        if (input == null) {</b>
+<b class="fc">&nbsp;            throw new IllegalArgumentException(&quot;Ficheiro não encontrado: &quot; + nomeFicheiro);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        InputStreamReader reader = new InputStreamReader(input);</b>
+&nbsp;
+<b class="fc">&nbsp;        return new CsvToBeanBuilder&lt;PropriedadeRustica&gt;(reader)</b>
+<b class="fc">&nbsp;                .withType(PropriedadeRustica.class)</b>
+<b class="fc">&nbsp;                .withSeparator(&#39;;&#39;) // &lt;- usa ponto e vírgula corretamente</b>
+<b class="fc">&nbsp;                .withIgnoreLeadingWhiteSpace(true)</b>
+<b class="fc">&nbsp;                .withIgnoreEmptyLine(true)</b>
+<b class="fc">&nbsp;                .build()</b>
+<b class="fc">&nbsp;                .parse();</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-04-07 13:25</div>
+</div>
+</body>
+</html>

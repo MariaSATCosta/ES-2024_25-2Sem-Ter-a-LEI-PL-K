@@ -1,0 +1,273 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > Neo4jConnector</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.gestaodeterritorio</a>
+</div>
+
+<h1>Coverage Summary for Class: Neo4jConnector (com.gestaodeterritorio)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Neo4jConnector</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.2%
+  </span>
+  <span class="absValue">
+    (35/36)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (78/78)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.gestaodeterritorio;
+&nbsp;
+&nbsp;import io.github.cdimascio.dotenv.Dotenv;
+&nbsp;import org.locationtech.jts.geom.Geometry;
+&nbsp;import org.locationtech.jts.index.strtree.STRtree;
+&nbsp;import org.neo4j.driver.*;
+&nbsp;import org.neo4j.driver.Record;
+&nbsp;
+&nbsp;import java.util.ArrayList;
+&nbsp;import java.util.HashSet;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Set;
+&nbsp;
+&nbsp;public class Neo4jConnector implements AutoCloseable {
+&nbsp;    private final Driver driver;
+&nbsp;
+<b class="fc">&nbsp;    public Neo4jConnector() {</b>
+<b class="fc">&nbsp;        Dotenv dotenv = Dotenv.configure().filename(&quot;credentials.env&quot;).load();</b>
+<b class="fc">&nbsp;        String uri = dotenv.get(&quot;NEO4J_URI&quot;);</b>
+<b class="fc">&nbsp;        String user = dotenv.get(&quot;NEO4J_USER&quot;);</b>
+<b class="fc">&nbsp;        String password = dotenv.get(&quot;NEO4J_PASSWORD&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public void close() {
+<b class="fc">&nbsp;        driver.close();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public void criarPropriedadesGrafo(List&lt;PropriedadeRustica&gt; propriedades) {
+<b class="fc">&nbsp;        if (propriedades.isEmpty()) return;</b>
+&nbsp;
+<b class="fc">&nbsp;        Set&lt;String&gt; existentes = obterPropriedadesExistentes();</b>
+<b class="fc">&nbsp;        List&lt;PropriedadeRustica&gt; novasPropriedades = new ArrayList&lt;&gt;();</b>
+&nbsp;
+<b class="fc">&nbsp;        for (PropriedadeRustica p : propriedades) {</b>
+<b class="fc">&nbsp;            if (!existentes.contains(p.getObjectId())) {</b>
+<b class="fc">&nbsp;                novasPropriedades.add(p);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (!novasPropriedades.isEmpty()) {</b>
+<b class="fc">&nbsp;            inserirPropriedades(novasPropriedades);</b>
+<b class="fc">&nbsp;            System.out.println(&quot;Inseridas &quot; + novasPropriedades.size() + &quot; novas propriedades&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private Set&lt;String&gt; obterPropriedadesExistentes() {
+<b class="fc">&nbsp;        Set&lt;String&gt; propriedades = new HashSet&lt;&gt;();</b>
+<b class="fc">&nbsp;        try (Session session = driver.session()) {</b>
+<b class="fc">&nbsp;            session.readTransaction(tx -&gt; {</b>
+<b class="fc">&nbsp;                Result result = tx.run(&quot;MATCH (p:Propriedade) RETURN p.objectId AS id&quot;);</b>
+<b class="fc">&nbsp;                while (result.hasNext()) {</b>
+<b class="fc">&nbsp;                    propriedades.add(result.next().get(&quot;id&quot;).asString());</b>
+&nbsp;                }
+<b class="fc">&nbsp;                return null;</b>
+&nbsp;            });
+&nbsp;        }
+<b class="fc">&nbsp;        return propriedades;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private void inserirPropriedades(List&lt;PropriedadeRustica&gt; propriedades) {
+<b class="fc">&nbsp;        try (Session session = driver.session()) {</b>
+<b class="fc">&nbsp;            session.writeTransaction(tx -&gt; {</b>
+<b class="fc">&nbsp;                String query = &quot;UNWIND $propriedades AS prop &quot; +</b>
+&nbsp;                        &quot;CREATE (p:Propriedade {objectId: prop.objectId, parId: prop.parId, parNum: prop.parNum, &quot; +
+&nbsp;                        &quot;municipio: prop.municipio, freguesia: prop.freguesia, shapeArea: prop.shapeArea, ilha: prop.ilha, &quot; +
+&nbsp;                        &quot;geometry: prop.geometry})&quot;;
+<b class="fc">&nbsp;                List&lt;Value&gt; parametros = new ArrayList&lt;&gt;();</b>
+<b class="fc">&nbsp;                for (PropriedadeRustica p : propriedades) {</b>
+<b class="fc">&nbsp;                    parametros.add(Values.parameters(</b>
+<b class="fc">&nbsp;                            &quot;objectId&quot;, p.getObjectId(),</b>
+<b class="fc">&nbsp;                            &quot;parId&quot;, p.getParId(),</b>
+<b class="fc">&nbsp;                            &quot;parNum&quot;, p.getParNum(),</b>
+<b class="fc">&nbsp;                            &quot;municipio&quot;, p.getMunicipio(),</b>
+<b class="fc">&nbsp;                            &quot;freguesia&quot;, p.getFreguesia(),</b>
+<b class="fc">&nbsp;                            &quot;shapeArea&quot;, p.getShapeArea(),</b>
+<b class="fc">&nbsp;                            &quot;ilha&quot;, p.getIlha(),</b>
+<b class="fc">&nbsp;                            &quot;geometry&quot;, p.getGeometry()</b>
+&nbsp;                    ));
+&nbsp;                }
+<b class="fc">&nbsp;                tx.run(query, Values.parameters(&quot;propriedades&quot;, parametros));</b>
+<b class="fc">&nbsp;                return null;</b>
+&nbsp;            });
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    public void criarRelacoesAdjacenciaGrafo(List&lt;PropriedadeRustica&gt; propriedades) {
+<b class="fc">&nbsp;        STRtree index = new STRtree();</b>
+<b class="fc">&nbsp;        for (PropriedadeRustica p : propriedades) {</b>
+<b class="fc">&nbsp;            Geometry g = GeoUtils.parseGeometry(p.getGeometry());</b>
+<b class="fc">&nbsp;            if (g != null) {</b>
+<b class="fc">&nbsp;                index.insert(g.getEnvelopeInternal(), p);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        Set&lt;String&gt; relacoesExistentes = obterRelacoesExistentes();</b>
+<b class="fc">&nbsp;        List&lt;String[]&gt; novasRelacoes = new ArrayList&lt;&gt;();</b>
+&nbsp;
+<b class="fc">&nbsp;        for (PropriedadeRustica p1 : propriedades) {</b>
+<b class="fc">&nbsp;            Geometry g1 = GeoUtils.parseGeometry(p1.getGeometry());</b>
+<b class="fc">&nbsp;            if (g1 == null) continue;</b>
+&nbsp;
+<b class="fc">&nbsp;            List&lt;?&gt; candidatos = index.query(g1.getEnvelopeInternal());</b>
+&nbsp;
+<b class="fc">&nbsp;            for (Object obj : candidatos) {</b>
+<b class="fc">&nbsp;                PropriedadeRustica p2 = (PropriedadeRustica) obj;</b>
+&nbsp;
+<b class="fc">&nbsp;                if (!p1.getObjectId().equals(p2.getObjectId())) {</b>
+<b class="fc">&nbsp;                    Geometry g2 = GeoUtils.parseGeometry(p2.getGeometry());</b>
+<b class="pc">&nbsp;                    if (g2 == null) continue;</b>
+&nbsp;
+<b class="fc">&nbsp;                    if (GeoUtils.saoAdjacentes(g1, g2)) {</b>
+<b class="fc">&nbsp;                        String relacao = p1.getObjectId() + &quot;-&quot; + p2.getObjectId();</b>
+<b class="fc">&nbsp;                        if (p1.getObjectId().compareTo(p2.getObjectId()) &lt; 0 &amp;&amp; !relacoesExistentes.contains(relacao)) {</b>
+<b class="fc">&nbsp;                            novasRelacoes.add(new String[]{p1.getObjectId(), p2.getObjectId()});</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        if (!novasRelacoes.isEmpty()) {</b>
+<b class="fc">&nbsp;            inserirRelacoes(novasRelacoes);</b>
+<b class="fc">&nbsp;            System.out.println(&quot;Inseridas &quot; + novasRelacoes.size() + &quot; novas relações adjacentes&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private Set&lt;String&gt; obterRelacoesExistentes() {
+<b class="fc">&nbsp;        Set&lt;String&gt; relacoes = new HashSet&lt;&gt;();</b>
+<b class="fc">&nbsp;        try (Session session = driver.session()) {</b>
+<b class="fc">&nbsp;            session.readTransaction(tx -&gt; {</b>
+<b class="fc">&nbsp;                Result result = tx.run(&quot;MATCH (p1:Propriedade)-[:ADJACENTE_A]-&gt;(p2:Propriedade) RETURN p1.objectId, p2.objectId&quot;);</b>
+<b class="fc">&nbsp;                while (result.hasNext()) {</b>
+<b class="fc">&nbsp;                    Record record = result.next();</b>
+<b class="fc">&nbsp;                    String relacao = record.get(&quot;p1.objectId&quot;).asString() + &quot;-&quot; + record.get(&quot;p2.objectId&quot;).asString();</b>
+<b class="fc">&nbsp;                    relacoes.add(relacao);</b>
+&nbsp;                }
+<b class="fc">&nbsp;                return null;</b>
+&nbsp;            });
+&nbsp;        }
+<b class="fc">&nbsp;        return relacoes;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private void inserirRelacoes(List&lt;String[]&gt; novasRelacoes) {
+<b class="fc">&nbsp;        try (Session session = driver.session()) {</b>
+<b class="fc">&nbsp;            session.writeTransaction(tx -&gt; {</b>
+<b class="fc">&nbsp;                String query = &quot;UNWIND $relacoes AS relacao &quot; +</b>
+&nbsp;                        &quot;MATCH (a:Propriedade {objectId: relacao[0]}), (b:Propriedade {objectId: relacao[1]}) &quot; +
+&nbsp;                        &quot;MERGE (a)-[:ADJACENTE_A]-&gt;(b)&quot;;
+<b class="fc">&nbsp;                tx.run(query, Values.parameters(&quot;relacoes&quot;, novasRelacoes));</b>
+<b class="fc">&nbsp;                return null;</b>
+&nbsp;            });
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-04-07 13:25</div>
+</div>
+</body>
+</html>
