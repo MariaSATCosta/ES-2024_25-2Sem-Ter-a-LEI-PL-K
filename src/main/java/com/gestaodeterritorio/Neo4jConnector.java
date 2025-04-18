@@ -42,7 +42,8 @@ public class Neo4jConnector implements AutoCloseable {
     }
 
     /**
-     * Insere propriedades no grafo se ainda não existirem na base de dados.
+     * Insere propriedades no grafo de propriedades se ainda não existirem na base de dados.
+     * Insere proprietários no grafo de proprietários se ainda não existirem na base de dados
      *
      * @param propriedades lista de propriedades a inserir
      */
@@ -89,6 +90,11 @@ public class Neo4jConnector implements AutoCloseable {
         return propriedades;
     }
 
+    /**
+     * Obtém o conjunto de identificadores dos proprietários já existentes no grafo de proprietários.
+     *
+     * @return conjunto de owners existentes
+     */
     private Set<String> obterProprietariosExistentes() {
         Set<String> proprietarios = new HashSet<>();
         try (Session session = driver.session()) {
@@ -104,7 +110,8 @@ public class Neo4jConnector implements AutoCloseable {
     }
 
     /**
-     * Insere uma lista de propriedades como nós no grafo.
+     * Insere uma lista de propriedades como nós no grafo de propriedades.
+     * Insere os respetivos proprietários como nós no grafo de proprietários.
      *
      * @param propriedades lista de propriedades a inserir
      */
@@ -137,6 +144,7 @@ public class Neo4jConnector implements AutoCloseable {
 
     /**
      * Cria relações de adjacência no grafo entre propriedades cuja geometria se intersecta ou toca.
+     * Cria relações de vizinhança no grafo entre proprietários.
      *
      * @param propriedades lista de propriedades com geometria
      */
@@ -222,6 +230,12 @@ public class Neo4jConnector implements AutoCloseable {
         }
     }
 
+    /**
+     * Insere novas relações de vizinhança no grafo de proprietários.
+     *
+     * @param novasRelacoesProprietarios lista de pares [owner1, owner2] representando as relações a criar
+     * @return número de relações inseridas no grafo
+     */
     private int inserirRelacoesProprietarios(List<String[]> novasRelacoesProprietarios) {
         try (Session session = driver.session()) {
             int relacoesCriadas = session.writeTransaction(tx -> {
