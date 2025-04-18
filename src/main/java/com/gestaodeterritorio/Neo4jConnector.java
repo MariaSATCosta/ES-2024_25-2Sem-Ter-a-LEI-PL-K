@@ -5,6 +5,7 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.index.strtree.STRtree;
 import org.neo4j.driver.*;
 import org.neo4j.driver.Record;
+import org.neo4j.driver.summary.ResultSummary;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,7 +14,7 @@ import java.util.Set;
 
 /**
  * Classe responsável pela integração com a base de dados Neo4j.
- *
+ * <p>
  * Permite inserir propriedades rústicas como nós do grafo e estabelecer relações de adjacência entre elas,
  * com base em operações espaciais (interseção ou contiguidade geométrica).
  */
@@ -48,18 +49,24 @@ public class Neo4jConnector implements AutoCloseable {
     public void criarPropriedadesGrafo(List<PropriedadeRustica> propriedades) {
         if (propriedades.isEmpty()) return;
 
-        Set<String> existentes = obterPropriedadesExistentes();
+        Set<String> propriedadesExistentes = obterPropriedadesExistentes();
+        Set<String> proprietariosExistentes = obterProprietariosExistentes();
         List<PropriedadeRustica> novasPropriedades = new ArrayList<>();
+        Set<String> novosProprietarios = new HashSet<>();
 
         for (PropriedadeRustica p : propriedades) {
-            if (!existentes.contains(p.getObjectId())) {
+            if (!propriedadesExistentes.contains(p.getObjectId())) {
                 novasPropriedades.add(p);
+                if (!proprietariosExistentes.contains(p.getOwner())) {
+                    novosProprietarios.add(p.getOwner());
+                }
             }
         }
 
         if (!novasPropriedades.isEmpty()) {
             inserirPropriedades(novasPropriedades);
             System.out.println("Inseridas " + novasPropriedades.size() + " novas propriedades");
+            System.out.println("Inseridos " + novosProprietarios.size() + " novos proprietários");
         }
     }
 
@@ -82,6 +89,20 @@ public class Neo4jConnector implements AutoCloseable {
         return propriedades;
     }
 
+    private Set<String> obterProprietariosExistentes() {
+        Set<String> proprietarios = new HashSet<>();
+        try (Session session = driver.session()) {
+            session.readTransaction(tx -> {
+                Result result = tx.run("MATCH (p:Proprietario) RETURN p.owner AS id");
+                while (result.hasNext()) {
+                    proprietarios.add(result.next().get("id").asString());
+                }
+                return null;
+            });
+        }
+        return proprietarios;
+    }
+
     /**
      * Insere uma lista de propriedades como nós no grafo.
      *
@@ -93,7 +114,7 @@ public class Neo4jConnector implements AutoCloseable {
                 String query = "UNWIND $propriedades AS prop " +
                         "CREATE (p:Propriedade {objectId: prop.objectId, parId: prop.parId, parNum: prop.parNum, " +
                         "municipio: prop.municipio, freguesia: prop.freguesia, shapeArea: prop.shapeArea, ilha: prop.ilha, " +
-                        "geometry: prop.geometry})";
+                        "geometry: prop.geometry, owner: prop.owner})" + "MERGE (owner:Proprietario {owner: prop.owner})";
                 List<Value> parametros = new ArrayList<>();
                 for (PropriedadeRustica p : propriedades) {
                     parametros.add(Values.parameters(
@@ -104,7 +125,8 @@ public class Neo4jConnector implements AutoCloseable {
                             "freguesia", p.getFreguesia(),
                             "shapeArea", p.getShapeArea(),
                             "ilha", p.getIlha(),
-                            "geometry", p.getGeometry()
+                            "geometry", p.getGeometry(),
+                            "owner", p.getOwner()
                     ));
                 }
                 tx.run(query, Values.parameters("propriedades", parametros));
@@ -129,6 +151,7 @@ public class Neo4jConnector implements AutoCloseable {
 
         Set<String> relacoesExistentes = obterRelacoesExistentes();
         List<String[]> novasRelacoes = new ArrayList<>();
+        List<String[]> novasRelacoesProprietarios = new ArrayList<>();
 
         for (PropriedadeRustica p1 : propriedades) {
             Geometry g1 = GeoUtils.parseGeometry(p1.getGeometry());
@@ -147,6 +170,7 @@ public class Neo4jConnector implements AutoCloseable {
                         String relacao = p1.getObjectId() + "-" + p2.getObjectId();
                         if (p1.getObjectId().compareTo(p2.getObjectId()) < 0 && !relacoesExistentes.contains(relacao)) {
                             novasRelacoes.add(new String[]{p1.getObjectId(), p2.getObjectId()});
+                            novasRelacoesProprietarios.add(new String[]{p1.getOwner(), p2.getOwner()});
                         }
                     }
                 }
@@ -154,7 +178,9 @@ public class Neo4jConnector implements AutoCloseable {
         }
         if (!novasRelacoes.isEmpty()) {
             inserirRelacoes(novasRelacoes);
-            System.out.println("Inseridas " + novasRelacoes.size() + " novas relações adjacentes");
+            System.out.println("Inseridas " + novasRelacoes.size() * 2 + " novas relações adjacentes");
+            int relacoesProprietariosCriadas = inserirRelacoesProprietarios(novasRelacoesProprietarios);
+            System.out.println("Inseridas " + relacoesProprietariosCriadas + " novas relações de vizinhança de proprietários");
         }
     }
 
@@ -189,10 +215,25 @@ public class Neo4jConnector implements AutoCloseable {
             session.writeTransaction(tx -> {
                 String query = "UNWIND $relacoes AS relacao " +
                         "MATCH (a:Propriedade {objectId: relacao[0]}), (b:Propriedade {objectId: relacao[1]}) " +
-                        "MERGE (a)-[:ADJACENTE_A]->(b)";
+                        "MERGE (a)-[:ADJACENTE_A]->(b)" + "MERGE (b)-[:ADJACENTE_A]->(a)";
                 tx.run(query, Values.parameters("relacoes", novasRelacoes));
                 return null;
             });
         }
+    }
+
+    private int inserirRelacoesProprietarios(List<String[]> novasRelacoesProprietarios) {
+        try (Session session = driver.session()) {
+            int relacoesCriadas = session.writeTransaction(tx -> {
+                String query = "UNWIND $relacoes AS relacao " +
+                        "MATCH (a:Proprietario {owner: relacao[0]}), (b:Proprietario {owner: relacao[1]}) " +
+                        "MERGE (a)-[:VIZINHO_DE]->(b)" + "MERGE (b)-[:VIZINHO_DE]->(a)";
+                Result result = tx.run(query, Values.parameters("relacoes", novasRelacoesProprietarios));
+                ResultSummary summary = result.consume();
+                return summary.counters().relationshipsCreated();
+            });
+            return relacoesCriadas;
+        }
+
     }
 }
