@@ -7,10 +7,7 @@ import org.neo4j.driver.*;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.summary.ResultSummary;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Classe responsável pela integração com a base de dados Neo4j.
@@ -42,7 +39,7 @@ public class Neo4jConnector implements AutoCloseable {
     }
 
     /**
-     * Insere propriedades no grafo de propriedades se ainda não existirem na base de dados.
+     * Insere propriedades no grafo de propriedades                        se ainda não existirem na base de dados.
      * Insere proprietários no grafo de proprietários se ainda não existirem na base de dados
      *
      * @param propriedades lista de propriedades a inserir
@@ -250,4 +247,23 @@ public class Neo4jConnector implements AutoCloseable {
         }
 
     }
+
+    /**
+     * Vai buscar todas as áreas (shapeArea) de propriedades cuja propriedade de região
+     * (freguesia|municipio|distrito) da match com o valor passado.
+     *
+     */
+    public List<Double> fetchAreasByRegion(String regionField, String regionValue) {
+        String cypher =
+                "MATCH (p:Propriedade) " +
+                        "WHERE p." + regionField + " = $valor " +
+                        "RETURN toFloat(p.shapeArea) AS area";
+        try (Session session = driver.session()) {
+            return session.readTransaction(tx ->
+                    tx.run(cypher, Collections.singletonMap("valor", regionValue))
+                            .list(r -> r.get("area").asDouble())
+            );
+        }
+    }
 }
+
