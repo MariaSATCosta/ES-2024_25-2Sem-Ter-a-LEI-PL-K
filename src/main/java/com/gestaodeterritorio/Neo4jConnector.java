@@ -7,10 +7,7 @@ import org.neo4j.driver.*;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.summary.ResultSummary;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Classe responsável pela integração com a base de dados Neo4j.
@@ -250,4 +247,26 @@ public class Neo4jConnector implements AutoCloseable {
         }
 
     }
+
+    /**
+     * Obtém a lista de áreas (shapeArea) de todas as propriedades que pertencem
+     * a uma região geográfica/administrativa específica.
+     *
+     * @param regionField o nome do campo de localização administrativa a filtrar (ex: "freguesia", "municipio", "ilha").
+     * @param regionValue o valor do campo da região que será usado como filtro.
+     * @return uma lista de valores representando as áreas das propriedades que pertencem à região indicada.
+     */
+    public List<Double> fetchAreasByRegion(String regionField, String regionValue) {
+        String cypher =
+                "MATCH (p:Propriedade) " +
+                        "WHERE p." + regionField + " = $valor " +
+                        "RETURN toFloat(p.shapeArea) AS area";
+        try (Session session = driver.session()) {
+            return session.readTransaction(tx ->
+                    tx.run(cypher, Collections.singletonMap("valor", regionValue))
+                            .list(r -> r.get("area").asDouble())
+            );
+        }
+    }
 }
+
