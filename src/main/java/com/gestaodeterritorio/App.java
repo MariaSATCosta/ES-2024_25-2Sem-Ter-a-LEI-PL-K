@@ -1,7 +1,6 @@
 package com.gestaodeterritorio;
 
 import java.util.List;
-import java.util.Scanner;
 
 /**
  * Classe principal da aplicação de Gestão do Território.
@@ -36,10 +35,5 @@ public class App {
         } catch (Exception e) {
             System.err.println("Erro ao carregar o CSV: " + e.getMessage());
         }
-
-
     }
-
-
-
 }

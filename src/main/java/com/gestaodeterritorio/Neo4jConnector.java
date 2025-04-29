@@ -39,7 +39,7 @@ public class Neo4jConnector implements AutoCloseable {
     }
 
     /**
-     * Insere propriedades no grafo de propriedades                        se ainda não existirem na base de dados.
+     * Insere propriedades no grafo de propriedades se ainda não existirem na base de dados.
      * Insere proprietários no grafo de proprietários se ainda não existirem na base de dados
      *
      * @param propriedades lista de propriedades a inserir
@@ -249,9 +249,12 @@ public class Neo4jConnector implements AutoCloseable {
     }
 
     /**
-     * Vai buscar todas as áreas (shapeArea) de propriedades cuja propriedade de região
-     * (freguesia|municipio|distrito) da match com o valor passado.
+     * Obtém a lista de áreas (shapeArea) de todas as propriedades que pertencem
+     * a uma região geográfica/administrativa específica.
      *
+     * @param regionField o nome do campo de localização administrativa a filtrar (ex: "freguesia", "municipio", "ilha").
+     * @param regionValue o valor do campo da região que será usado como filtro.
+     * @return uma lista de valores representando as áreas das propriedades que pertencem à região indicada.
      */
     public List<Double> fetchAreasByRegion(String regionField, String regionValue) {
         String cypher =
