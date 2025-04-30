@@ -268,5 +268,49 @@ public class Neo4jConnector implements AutoCloseable {
             );
         }
     }
+
+
+    /**
+     * Calcula as áreas agrupadas de propriedades que pertencem a uma região específica,
+     * considerando que propriedades adjacentes com o mesmo proprietário devem ser tratadas
+     * como uma única propriedade.
+     *
+     * O agrupamento é feito com base em:
+     * - Adjacência entre propriedades (`:ADJACENTE_A`)
+     * - Mesmo valor no campo de localização (`freguesia`, `municipio` ou `ilha`)
+     * - Mesmo proprietário (`owner`)
+     *
+     * Cada grupo de propriedades adjacentes do mesmo proprietário é tratado como uma única
+     * propriedade fundida. Para cada grupo, soma-se a área (`shapeArea`) das propriedades que o compõem.
+     *
+     * @param campoRegiao o nome do campo geográfico a filtrar (ex: "freguesia", "municipio", "ilha")
+     * @param valorRegiao o valor a filtrar nesse campo (ex: "Arco da Calheta")
+     * @return uma lista de áreas agrupadas, onde cada valor representa a soma das áreas de um grupo
+     */
+    public List<Double> calcularAreasAgrupadasPorRegiao(String campoRegiao, String valorRegiao) {
+        String cypher = String.format("""
+        MATCH (p:Propriedade)
+        WHERE p.%s = $valorRegiao
+        CALL {
+            WITH p
+            MATCH grupo = (p)-[:ADJACENTE_A*]-(p2:Propriedade)
+            WHERE p.owner = p2.owner AND p.%s = p2.%s
+            RETURN collect(DISTINCT p2.objectId) AS grupoIds
+        }
+        UNWIND grupoIds AS id
+        WITH grupoIds
+        MATCH (prop:Propriedade)
+        WHERE prop.objectId IN grupoIds
+        RETURN sum(toFloat(prop.shapeArea)) AS areaGrupo
+        """, campoRegiao, campoRegiao, campoRegiao);
+
+        try (Session session = driver.session()) {
+            return session.readTransaction(tx ->
+                    tx.run(cypher, Collections.singletonMap("valorRegiao", valorRegiao))
+                            .list(r -> r.get("areaGrupo").asDouble())
+            );
+        }
+    }
+
 }
 

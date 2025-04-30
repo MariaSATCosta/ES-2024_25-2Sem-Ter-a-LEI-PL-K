@@ -31,6 +31,14 @@ public class App {
             connector.criarPropriedadesGrafo(propriedades);
             connector.criarRelacoesAdjacenciaGrafo(propriedades);
 
+            // TESTE DO PONTO 5
+            LogisticaAreas logistica = new LogisticaAreas(connector);
+
+            String freguesia = "Arco da Calheta";
+            double mediaAgrupada = logistica.mediaAgrupadaPorFreguesia(freguesia);
+            System.out.printf("Área média AGRUPADA por adjacência e proprietário na freguesia '%s': %.2f m²%n",
+                    freguesia, mediaAgrupada);
+
             connector.close();
         } catch (Exception e) {
             System.err.println("Erro ao carregar o CSV: " + e.getMessage());
