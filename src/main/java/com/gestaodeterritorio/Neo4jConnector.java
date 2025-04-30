@@ -256,7 +256,7 @@ public class Neo4jConnector implements AutoCloseable {
      * @param regionValue o valor do campo da região que será usado como filtro.
      * @return uma lista de valores representando as áreas das propriedades que pertencem à região indicada.
      */
-    public List<Double> fetchAreasByRegion(String regionField, String regionValue) {
+    public List<Double> devolverAreasPorRegiao(String regionField, String regionValue) {
         String cypher =
                 "MATCH (p:Propriedade) " +
                         "WHERE p." + regionField + " = $valor " +
@@ -268,5 +268,52 @@ public class Neo4jConnector implements AutoCloseable {
             );
         }
     }
+
+
+    /**
+     * Calcula as áreas agrupadas de propriedades que pertencem a uma região específica,
+     * considerando que propriedades adjacentes com o mesmo proprietário devem ser tratadas
+     * como uma única propriedade.
+     *
+     * O agrupamento é feito com base em:
+     * - Adjacência entre propriedades (`:ADJACENTE_A`)
+     * - Mesmo valor no campo de localização (`freguesia`, `municipio` ou `ilha`)
+     * - Mesmo proprietário (`owner`)
+     *
+     * Cada grupo de propriedades adjacentes do mesmo proprietário é tratado como uma única
+     * propriedade fundida. Para cada grupo, soma-se a área (`shapeArea`) das propriedades que o compõem.
+     *
+     * @param campoRegiao o nome do campo geográfico a filtrar (ex: "freguesia", "municipio", "ilha")
+     * @param valorRegiao o valor a filtrar nesse campo (ex: "Arco da Calheta")
+     * @return uma lista de áreas agrupadas, onde cada valor representa a soma das áreas de um grupo
+     */
+    public List<Double> devolverAreasAgrupadasPorRegiao(String campoRegiao, String valorRegiao) {
+        String cypher = String.format("""
+    MATCH (p:Propriedade)
+    WHERE p.%s = $valorRegiao
+    CALL {
+        WITH p
+        MATCH grupo = (p)-[:ADJACENTE_A*]-(p2:Propriedade)
+        WHERE p.owner = p2.owner AND p.%s = p2.%s
+        RETURN collect(DISTINCT p2.objectId) AS grupoIds
+    }
+    WITH DISTINCT grupoIds
+    UNWIND grupoIds AS id
+    MATCH (prop:Propriedade {objectId: id})
+    WITH grupoIds, sum(toFloat(prop.shapeArea)) AS areaGrupo
+    RETURN areaGrupo
+""", campoRegiao, campoRegiao, campoRegiao);
+
+
+
+
+        try (Session session = driver.session()) {
+            return session.readTransaction(tx ->
+                    tx.run(cypher, Collections.singletonMap("valorRegiao", valorRegiao))
+                            .list(r -> r.get("areaGrupo").asDouble())
+            );
+        }
+    }
+
 }
 
