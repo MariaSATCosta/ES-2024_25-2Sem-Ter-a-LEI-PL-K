@@ -256,7 +256,7 @@ public class Neo4jConnector implements AutoCloseable {
      * @param regionValue o valor do campo da região que será usado como filtro.
      * @return uma lista de valores representando as áreas das propriedades que pertencem à região indicada.
      */
-    public List<Double> fetchAreasByRegion(String regionField, String regionValue) {
+    public List<Double> devolverAreasPorRegiao(String regionField, String regionValue) {
         String cypher =
                 "MATCH (p:Propriedade) " +
                         "WHERE p." + regionField + " = $valor " +
@@ -287,22 +287,25 @@ public class Neo4jConnector implements AutoCloseable {
      * @param valorRegiao o valor a filtrar nesse campo (ex: "Arco da Calheta")
      * @return uma lista de áreas agrupadas, onde cada valor representa a soma das áreas de um grupo
      */
-    public List<Double> calcularAreasAgrupadasPorRegiao(String campoRegiao, String valorRegiao) {
+    public List<Double> devolverAreasAgrupadasPorRegiao(String campoRegiao, String valorRegiao) {
         String cypher = String.format("""
-        MATCH (p:Propriedade)
-        WHERE p.%s = $valorRegiao
-        CALL {
-            WITH p
-            MATCH grupo = (p)-[:ADJACENTE_A*]-(p2:Propriedade)
-            WHERE p.owner = p2.owner AND p.%s = p2.%s
-            RETURN collect(DISTINCT p2.objectId) AS grupoIds
-        }
-        UNWIND grupoIds AS id
-        WITH grupoIds
-        MATCH (prop:Propriedade)
-        WHERE prop.objectId IN grupoIds
-        RETURN sum(toFloat(prop.shapeArea)) AS areaGrupo
-        """, campoRegiao, campoRegiao, campoRegiao);
+    MATCH (p:Propriedade)
+    WHERE p.%s = $valorRegiao
+    CALL {
+        WITH p
+        MATCH grupo = (p)-[:ADJACENTE_A*]-(p2:Propriedade)
+        WHERE p.owner = p2.owner AND p.%s = p2.%s
+        RETURN collect(DISTINCT p2.objectId) AS grupoIds
+    }
+    WITH DISTINCT grupoIds
+    UNWIND grupoIds AS id
+    MATCH (prop:Propriedade {objectId: id})
+    WITH grupoIds, sum(toFloat(prop.shapeArea)) AS areaGrupo
+    RETURN areaGrupo
+""", campoRegiao, campoRegiao, campoRegiao);
+
+
+
 
         try (Session session = driver.session()) {
             return session.readTransaction(tx ->

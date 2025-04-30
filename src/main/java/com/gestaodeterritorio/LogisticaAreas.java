@@ -57,7 +57,7 @@ public class LogisticaAreas {
      * @return média das áreas das propriedades, ou 0.0 se nenhuma for encontrada.
      */
     private double calculaMedia(String campoRegiao, String valorRegiao) {
-        List<Double> areas = connector.fetchAreasByRegion(campoRegiao, valorRegiao);
+        List<Double> areas = connector.devolverAreasPorRegiao(campoRegiao, valorRegiao);
         if (areas.isEmpty()) {
             return 0.0;
         }
@@ -104,7 +104,7 @@ public class LogisticaAreas {
      * @return média das áreas agrupadas, ou 0.0 se nenhuma for encontrada.
      */
     private double calculaMediaAgrupada(String campoRegiao, String valorRegiao) {
-        List<Double> areas = connector.calcularAreasAgrupadasPorRegiao(campoRegiao, valorRegiao);
+        List<Double> areas = connector.devolverAreasAgrupadasPorRegiao(campoRegiao, valorRegiao);
         if (areas.isEmpty()) {
             return 0.0;
         }
