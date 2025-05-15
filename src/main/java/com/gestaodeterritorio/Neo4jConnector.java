@@ -6,8 +6,11 @@ import org.locationtech.jts.index.strtree.STRtree;
 import org.neo4j.driver.*;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.summary.ResultSummary;
+import org.neo4j.driver.types.Node;
 
 import java.util.*;
+
+import static org.neo4j.driver.Values.parameters;
 
 /**
  * Classe responsável pela integração com a base de dados Neo4j.
@@ -315,5 +318,163 @@ public class Neo4jConnector implements AutoCloseable {
         }
     }
 
+    /**
+     * Obtém todas as propriedades rústicas associadas a um determinado proprietário.
+     *
+     * @param owner Nome do proprietário.
+     * @return Lista de propriedades do proprietário especificado.
+     */
+    public List<PropriedadeRustica> obterPropriedadesPorOwner(String owner) {
+        List<PropriedadeRustica> propriedades = new ArrayList<>();
+
+        String query = "MATCH (p:Propriedade) WHERE p.owner = $owner RETURN p";
+
+        try (Session session = driver.session()) {
+            Result result = session.run(query, parameters("owner", owner));  // Passa o parâmetro 'owner'
+            while (result.hasNext()) {
+                Record record = result.next();
+                Node node = record.get("p").asNode();
+
+                // Ignora propriedades com valores "NA"
+                if (node.get("objectId").isNull() || node.get("objectId").asString().equalsIgnoreCase("NA")) continue;
+                if (node.get("shapeArea").isNull() || node.get("shapeArea").asString().equalsIgnoreCase("NA")) continue;
+                if (node.get("owner").isNull() || node.get("owner").asString().equalsIgnoreCase("NA")) continue;
+
+                PropriedadeRustica propriedade = new PropriedadeRustica();
+                propriedade.setObjectId(node.get("objectId").asString());
+                propriedade.setParId(node.get("parId").asString(""));
+                propriedade.setParNum(node.get("parNum").asString(""));
+                propriedade.setShapeArea(node.get("shapeArea").asString(""));
+                propriedade.setGeometry(node.get("geometry").asString(""));
+                propriedade.setOwner(node.get("owner").asString(""));
+                propriedade.setFreguesia(node.get("freguesia").asString(""));
+                propriedade.setMunicipio(node.get("municipio").asString(""));
+                propriedade.setIlha(node.get("ilha").asString(""));
+
+                propriedades.add(propriedade);
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao obter propriedades por owner: " + e.getMessage());
+        }
+
+        return propriedades;
+    }
+
+    /**
+     * Obtém todas as propriedades que possuem pelo menos uma ligação de adjacência com outra propriedade.
+     *
+     * @return Conjunto de propriedades com adjacentes.
+     */
+    public Set<PropriedadeRustica> obterPropriedadesComAdjacentes() {
+        String query = "MATCH (p:Propriedade)-[:ADJACENTE_A]-(:Propriedade) RETURN DISTINCT p";
+
+        Set<PropriedadeRustica> propriedades = new HashSet<>();
+
+        try (Session session = driver.session()) {
+            Result result = session.run(query);
+            while (result.hasNext()) {
+                Record record = result.next();
+                Node node = record.get("p").asNode();
+
+                // Ignora se tiver valores "NA"
+                if (node.get("freguesia").isNull() || node.get("freguesia").asString().equalsIgnoreCase("NA")) continue;
+                if (node.get("municipio").isNull() || node.get("municipio").asString().equalsIgnoreCase("NA")) continue;
+                if (node.get("ilha").isNull() || node.get("ilha").asString().equalsIgnoreCase("NA")) continue;
+
+                PropriedadeRustica propriedade = new PropriedadeRustica();
+                propriedade.setObjectId(node.get("objectId").asString());
+                propriedade.setParId(node.get("parId").asString(""));
+                propriedade.setParNum(node.get("parNum").asString(""));
+                propriedade.setShapeArea(node.get("shapeArea").asString(""));
+                propriedade.setGeometry(node.get("geometry").asString(""));
+                propriedade.setOwner(node.get("owner").asString(""));
+                propriedade.setFreguesia(node.get("freguesia").asString(""));
+                propriedade.setMunicipio(node.get("municipio").asString(""));
+                propriedade.setIlha(node.get("ilha").asString(""));
+
+                propriedades.add(propriedade);
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao obter propriedades com adjacentes: " + e.getMessage());
+        }
+
+        return propriedades;
+    }
+
+    /**
+     * Obtém a lista de propriedades adjacentes a uma propriedade específica, com base no seu objectId.
+     *
+     * @param idPropriedade Identificador da propriedade.
+     * @return Lista de propriedades adjacentes.
+     */
+    public List<PropriedadeRustica> obterPropriedadesAdjacentes(String idPropriedade) {
+        String query = "MATCH (p:Propriedade {objectId: $id})-[:ADJACENTE_A]-(adj:Propriedade) " +
+                "RETURN adj";
+
+        List<PropriedadeRustica> adjacentes = new ArrayList<>();
+
+        try (Session session = driver.session()) {
+            Result result = session.run(query, parameters("id", idPropriedade));
+            while (result.hasNext()) {
+                Record record = result.next();
+                Node node = record.get("adj").asNode();
+
+                // Ignorar nós com campos essenciais "NA"
+                if (node.get("freguesia").isNull() || node.get("freguesia").asString().equalsIgnoreCase("NA")) continue;
+                if (node.get("municipio").isNull() || node.get("municipio").asString().equalsIgnoreCase("NA")) continue;
+                if (node.get("ilha").isNull() || node.get("ilha").asString().equalsIgnoreCase("NA")) continue;
+
+                PropriedadeRustica propriedade = new PropriedadeRustica();
+                propriedade.setObjectId(node.get("objectId").asString());
+                propriedade.setParId(node.get("parId").asString(""));
+                propriedade.setParNum(node.get("parNum").asString(""));
+                propriedade.setShapeArea(node.get("shapeArea").asString(""));
+                propriedade.setGeometry(node.get("geometry").asString(""));
+                propriedade.setOwner(node.get("owner").asString(""));
+                propriedade.setFreguesia(node.get("freguesia").asString(""));
+                propriedade.setMunicipio(node.get("municipio").asString(""));
+                propriedade.setIlha(node.get("ilha").asString(""));
+
+                adjacentes.add(propriedade);
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao obter propriedades adjacentes: " + e.getMessage());
+        }
+
+        return adjacentes;
+    }
+
+    /**
+     * Troca os proprietários entre duas propriedades.
+     *
+     * @param id1 Identificador da primeira propriedade.
+     * @param novoDono1 Novo proprietario da primeira propriedade.
+     * @param id2 Identificador da segunda propriedade.
+     * @param novoDono2 Novo proprietario da segunda propriedade.
+     */
+    public void trocarProprietarios(String id1, String novoDono1, String id2, String novoDono2) {
+        try (Session session = driver.session()) {
+            session.writeTransaction(tx -> {
+                tx.run("""
+                MATCH (p1:Propriedade {objectId: $id1}), (p2:Propriedade {objectId: $id2})
+                SET p1.owner = $novoDono1, p2.owner = $novoDono2
+            """,
+                        parameters("id1", id1, "novoDono1", novoDono1, "id2", id2, "novoDono2", novoDono2));
+                return null;
+            });
+        }
+    }
+
+    /**
+     * Reverte os proprietários das propriedades para os valores originais.
+     *
+     * @param id1 Identificador da primeira propriedade.
+     * @param donoOriginal1 proprietario original da primeira propriedade.
+     * @param id2 Identificador da segunda propriedade.
+     * @param donoOriginal2 proprietario original da segunda propriedade.
+     */
+    public void reverterProprietarios(String id1, String donoOriginal1, String id2, String donoOriginal2) {
+        trocarProprietarios(id1, donoOriginal1, id2, donoOriginal2);
+    }
 }
 
