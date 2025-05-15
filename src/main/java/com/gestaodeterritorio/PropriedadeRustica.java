@@ -111,6 +111,96 @@ public class PropriedadeRustica {
     }
 
     /**
+     * Define o identificador único da propriedade.
+     *
+     * @param objectId identificador da propriedade
+     */
+    public void setObjectId(String objectId) {
+        this.objectId = objectId;
+    }
+
+    /**
+     * Define o identificador da parcela.
+     *
+     * @param parId identificador da parcela
+     */
+    public void setParId(String parId) {
+        this.parId = parId;
+    }
+
+    /**
+     * Define o número da parcela.
+     *
+     * @param parNum número da parcela
+     */
+    public void setParNum(String parNum) {
+        this.parNum = parNum;
+    }
+
+    /**
+     * Define o comprimento da geometria da propriedade.
+     *
+     * @param shapeLength comprimento da geometria
+     */
+    public void setShapeLength(String shapeLength) {
+        this.shapeLength = shapeLength;
+    }
+
+    /**
+     * Define a área da propriedade.
+     *
+     * @param shapeArea área da propriedade
+     */
+    public void setShapeArea(String shapeArea) {
+        this.shapeArea = shapeArea;
+    }
+
+    /**
+     * Define a geometria da propriedade no formato WKT.
+     *
+     * @param geometry geometria da propriedade
+     */
+    public void setGeometry(String geometry) {
+        this.geometry = geometry;
+    }
+
+    /**
+     * Define o nome do proprietário da propriedade.
+     *
+     * @param owner nome do proprietário
+     */
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    /**
+     * Define a freguesia da propriedade.
+     *
+     * @param freguesia freguesia onde se localiza a propriedade
+     */
+    public void setFreguesia(String freguesia) {
+        this.freguesia = freguesia;
+    }
+
+    /**
+     * Define a ilha onde a propriedade se localiza.
+     *
+     * @param ilha nome da ilha
+     */
+    public void setIlha(String ilha) {
+        this.ilha = ilha;
+    }
+
+    /**
+     * Define o município da propriedade.
+     *
+     * @param municipio nome do município
+     */
+    public void setMunicipio(String municipio) {
+        this.municipio = municipio;
+    }
+    
+    /**
      * Representação textual formatada da propriedade rústica.
      *
      * @return string com os principais dados da propriedade
