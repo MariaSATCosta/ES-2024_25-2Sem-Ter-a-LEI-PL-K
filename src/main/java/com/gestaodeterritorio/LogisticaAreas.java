@@ -56,7 +56,7 @@ public class LogisticaAreas {
      * @param valorRegiao valor a filtrar no campo indicado.
      * @return média das áreas das propriedades, ou 0.0 se nenhuma for encontrada.
      */
-    private double calculaMedia(String campoRegiao, String valorRegiao) {
+    public double calculaMedia(String campoRegiao, String valorRegiao) {
         List<Double> areas = connector.devolverAreasPorRegiao(campoRegiao, valorRegiao);
         if (areas.isEmpty()) {
             return 0.0;
@@ -103,7 +103,7 @@ public class LogisticaAreas {
      * @param valorRegiao valor específico a filtrar.
      * @return média das áreas agrupadas, ou 0.0 se nenhuma for encontrada.
      */
-    private double calculaMediaAgrupada(String campoRegiao, String valorRegiao) {
+    public double calculaMediaAgrupada(String campoRegiao, String valorRegiao) {
         List<Double> areas = connector.devolverAreasAgrupadasPorRegiao(campoRegiao, valorRegiao);
         if (areas.isEmpty()) {
             return 0.0;
@@ -113,100 +113,24 @@ public class LogisticaAreas {
     }
 
     /**
-     * Sugere um número limitado de trocas de propriedades entre proprietarios diferentes,
-     * priorizando trocas que aumentem a média das áreas agrupadas (por adjacência e proprietário)
-     * no respetivo município de ambas as partes.
+     * Sugere um número limitado de trocas de propriedades entre proprietários diferentes,
+     * simulando a troca e reversão de propriedades para verificar se a média das áreas agrupadas
+     * (por adjacência e proprietário) no respetivo município de ambas as partes melhora após a troca.
      *
-     * As trocas são baseadas na proximidade de área entre propriedades adjacentes
-     * e de proprietarios distintos. A operação é simulada (troca e reversão) para verificar o impacto
-     * nas médias antes de ser sugerida.
-     *
-     * @param numTrocas número máximo de sugestões de trocas a devolver.
-     * @return lista de sugestões de trocas vantajosas para ambos os proprietarios.
-     */
-    public List<SugestaoTroca> sugerirTrocasArea(int numTrocas) {
-        Set<PropriedadeRustica> propriedadesSet = connector.obterPropriedadesComAdjacentes();
-        List<PropriedadeRustica> propriedades = new ArrayList<>(propriedadesSet);
-        Collections.shuffle(propriedades);
-
-        List<SugestaoTroca> sugestoes = new ArrayList<>();
-
-        for (PropriedadeRustica p1 : propriedades) {
-            List<PropriedadeRustica> adjacentes = connector.obterPropriedadesAdjacentes(p1.getObjectId());
-
-            for (PropriedadeRustica p2 : adjacentes) {
-                if (p1.getOwner().equals(p2.getOwner())) continue; // Proprietarios diferentes
-
-                List<PropriedadeRustica> propriedadesDono2 = connector.obterPropriedadesPorOwner(p2.getOwner());
-
-                propriedadesDono2.sort(Comparator
-                        .comparingDouble((PropriedadeRustica p3) -> {
-                            try {
-                                double area1 = Double.parseDouble(p1.getShapeArea());
-                                double area3 = Double.parseDouble(p3.getShapeArea());
-                                return Math.abs(area1 - area3);
-                            } catch (NumberFormatException e) {
-                                return Double.MAX_VALUE;
-                            }
-                        })
-                );
-
-                for (PropriedadeRustica p3 : propriedadesDono2) {
-                    if (p3.getObjectId().equals(p2.getObjectId())) continue;
-
-                    try {
-                        double area1 = Double.parseDouble(p1.getShapeArea());
-                        double area3 = Double.parseDouble(p3.getShapeArea());
-                        double areaDiff = Math.abs(area1 - area3);
-
-                        double areaDono1Antes = calculaMediaAgrupada("municipio", p1.getMunicipio());
-                        double areaDono2Antes = p1.getMunicipio().equals(p3.getMunicipio())
-                                ? areaDono1Antes
-                                : calculaMediaAgrupada("municipio", p3.getMunicipio());
-
-                        connector.trocarProprietarios(p1.getObjectId(), p3.getOwner(), p3.getObjectId(), p1.getOwner());
-
-                        double areaDono1Depois = calculaMediaAgrupada("municipio", p1.getMunicipio());
-                        double areaDono2Depois = p1.getMunicipio().equals(p3.getMunicipio())
-                                ? areaDono1Depois
-                                : calculaMediaAgrupada("municipio", p3.getMunicipio());
-
-                        connector.reverterProprietarios(p1.getObjectId(), p1.getOwner(), p3.getObjectId(), p3.getOwner());
-
-                        if (areaDono1Depois > areaDono1Antes && areaDono2Depois > areaDono2Antes) {
-                            sugestoes.add(new SugestaoTroca(p1, p3, areaDiff));
-                            if (sugestoes.size() == numTrocas) {
-                                return sugestoes;
-                            }
-                        }
-
-                    } catch (NumberFormatException e) {
-                        System.err.println("Erro ao converter áreas: " + e.getMessage());
-                    }
-                }
-            }
-        }
-
-        return sugestoes;
-    }
-
-    /**
-     * Sugere um número limitado de trocas de propriedades entre proprietarios diferentes,
-     * priorizando trocas que aumentem a média das áreas agrupadas no município de ambos,
-     * e que apresentem maior compatibilidade com base nos seguintes critérios (em ordem):
+     * O critério base de troca é sempre a proximidade de área entre propriedades adjacentes
+     * de donos distintos. Opcionalmente, podem ser usados critérios adicionais para ordenar
+     * as propriedades candidatas:
      * <ul>
-     *     <li>Semelhança de área</li>
-     *     <li>Mesma freguesia</li>
-     *     <li>Número semelhante de adjacentes</li>
+     *     <li><strong>Semelhança de área:</strong> diferença absoluta de áreas.</li>
+     *     <li><strong>Mesma freguesia:</strong> prioriza propriedades da mesma freguesia.</li>
+     *     <li><strong>Semelhança de adjacentes:</strong> prioriza número semelhante de propriedades adjacentes.</li>
      * </ul>
      *
-     * As trocas são simuladas para avaliar se a média de áreas agrupadas aumenta
-     * para ambos os lados, e só são sugeridas se isso ocorrer.
-     *
      * @param numTrocas número máximo de sugestões de trocas a devolver.
-     * @return lista de sugestões de trocas vantajosas para ambos os proprietarios com base em múltiplos critérios.
+     * @param usarCriteriosAvancados se verdadeiro, aplica critérios adicionais além da área.
+     * @return lista de sugestões de trocas vantajosas para ambos os proprietários.
      */
-    public List<SugestaoTroca> sugerirTrocas(int numTrocas) {
+    public List<SugestaoTroca> sugerirTrocas(int numTrocas, boolean usarCriteriosAvancados) {
         Set<PropriedadeRustica> propriedadesSet = connector.obterPropriedadesComAdjacentes();
         List<PropriedadeRustica> propriedades = new ArrayList<>(propriedadesSet);
         Collections.shuffle(propriedades);
@@ -217,11 +141,11 @@ public class LogisticaAreas {
             List<PropriedadeRustica> adjacentes = connector.obterPropriedadesAdjacentes(p1.getObjectId());
 
             for (PropriedadeRustica p2 : adjacentes) {
-                if (p1.getOwner().equals(p2.getOwner())) continue; // Donos diferentes
+                if (p1.getOwner().equals(p2.getOwner())) continue;
 
                 List<PropriedadeRustica> propriedadesDono2 = connector.obterPropriedadesPorOwner(p2.getOwner());
 
-                propriedadesDono2.sort(Comparator
+                Comparator<PropriedadeRustica> comparator = Comparator
                         .comparingDouble((PropriedadeRustica p3) -> {
                             try {
                                 double area1 = Double.parseDouble(p1.getShapeArea());
@@ -230,16 +154,19 @@ public class LogisticaAreas {
                             } catch (NumberFormatException e) {
                                 return Double.MAX_VALUE;
                             }
-                        })
-                        .thenComparing((PropriedadeRustica p3) ->
-                                !p1.getFreguesia().equals(p3.getFreguesia())
-                        )
-                        .thenComparingInt((PropriedadeRustica p3) -> {
-                            int adj1 = connector.obterPropriedadesAdjacentes(p1.getObjectId()).size();
-                            int adj3 = connector.obterPropriedadesAdjacentes(p3.getObjectId()).size();
-                            return Math.abs(adj1 - adj3);
-                        })
-                );
+                        });
+
+                if (usarCriteriosAvancados) {
+                    comparator = comparator
+                            .thenComparing((PropriedadeRustica p3) -> !p1.getFreguesia().equals(p3.getFreguesia()))
+                            .thenComparingInt((PropriedadeRustica p3) -> {
+                                int adj1 = connector.obterPropriedadesAdjacentes(p1.getObjectId()).size();
+                                int adj3 = connector.obterPropriedadesAdjacentes(p3.getObjectId()).size();
+                                return Math.abs(adj1 - adj3);
+                            });
+                }
+
+                propriedadesDono2.sort(comparator);
 
                 for (PropriedadeRustica p3 : propriedadesDono2) {
                     if (p3.getObjectId().equals(p2.getObjectId())) continue;
@@ -279,4 +206,5 @@ public class LogisticaAreas {
 
         return sugestoes;
     }
+
 }
