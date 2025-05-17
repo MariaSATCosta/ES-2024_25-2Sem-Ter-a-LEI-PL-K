@@ -3,11 +3,11 @@ package com.gestaodeterritorio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterAll;
+import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -18,10 +18,41 @@ class LogisticaAreasTest {
     private static Neo4jConnector mockConnector;
     private LogisticaAreas service;
 
+    private static PropriedadeRustica p1, p2, p3;
+
     @BeforeEach
     void setUp() {
         mockConnector = mock(Neo4jConnector.class);
-        service = new LogisticaAreas(mockConnector);
+        service = Mockito.spy(new LogisticaAreas(mockConnector));
+
+
+        p1 = new PropriedadeRustica();
+        p1.setObjectId("1");
+        p1.setOwner("Dono1");
+        p1.setShapeArea("1000");
+        p1.setFreguesia("F1");
+        p1.setMunicipio("M1");
+
+        p2 = new PropriedadeRustica();
+        p2.setObjectId("2");
+        p2.setOwner("Dono2");
+        p2.setShapeArea("1005");
+        p2.setFreguesia("F1");
+        p2.setMunicipio("M1");
+
+        p3 = new PropriedadeRustica();
+        p3.setObjectId("3");
+        p3.setOwner("Dono2");
+        p3.setShapeArea("1003");
+        p3.setFreguesia("F1");
+        p3.setMunicipio("M1");
+
+//        List<PropriedadeRustica> propriedades = new ArrayList<>();
+//        propriedades.add(p1);
+//        propriedades.add(p2);
+//        propriedades.add(p3);
+//        mockConnector.criarPropriedadesGrafo(propriedades);
+//        mockConnector.criarRelacoesAdjacenciaGrafo(propriedades);
     }
 
     @AfterAll
@@ -122,6 +153,32 @@ class LogisticaAreasTest {
         assertEquals(expected, result, 1e-6,
                 "Error: calculaMedia should compute the correct average for a non-empty list"); // Error if average wrong.
 
+    }
+    @Test
+    void sugerirTrocas_numTrocasZero() {
+        List<SugestaoTroca> resultado = service.sugerirTrocas(0, false);
+        assertTrue(resultado.isEmpty(), "A lista deve estar vazia quando numTrocas <= 0.");
+    }
+
+    @Test
+    void sugerirTrocas1_propriedadesSemAdjacentes() {
+        when(mockConnector.obterPropriedadesComAdjacentes()).thenReturn(Set.of(p1));
+        when(mockConnector.obterPropriedadesAdjacentes("1")).thenReturn(List.of());
+
+        List<SugestaoTroca> resultado = service.sugerirTrocas(1, false);
+
+        assertTrue(resultado.isEmpty(), "Nenhuma sugestão deve ser feita se não houver adjacentes.");
+    }
+
+    @Test
+    void sugerirTrocas2_mesmoDonoIgnorado() {
+        p2.setOwner("Dono1"); // Mesmo dono que p1
+        when(mockConnector.obterPropriedadesComAdjacentes()).thenReturn(Set.of(p1));
+        when(mockConnector.obterPropriedadesAdjacentes("1")).thenReturn(List.of(p2));
+
+        List<SugestaoTroca> resultado = service.sugerirTrocas(1, false);
+
+        assertTrue(resultado.isEmpty(), "Trocas entre o mesmo proprietário devem ser ignoradas.");
     }
 
 }

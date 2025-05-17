@@ -302,4 +302,5 @@ public class Neo4jConnectorTest {
         Set<String> result = (Set<String>) method.invoke(connector);
         assertTrue(result.contains("A-B"), "Error: Expected relationship 'A-B' to be present in the set"); // Error if not contained.
     }
+
 }
