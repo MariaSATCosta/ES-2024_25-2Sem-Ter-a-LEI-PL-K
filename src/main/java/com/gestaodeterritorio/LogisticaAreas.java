@@ -19,7 +19,7 @@ public class LogisticaAreas {
     }
 
     public double mediaPorDistrito(String nomeDistrito) {
-        return calculaMedia("distrito", nomeDistrito);
+        return calculaMedia("ilha", nomeDistrito);
     }
 
     // método genérico reutilizável

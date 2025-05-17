@@ -37,7 +37,6 @@ public class App {
             System.err.println("Erro ao carregar o CSV: " + e.getMessage());
         }
 
-
     }
 
 
