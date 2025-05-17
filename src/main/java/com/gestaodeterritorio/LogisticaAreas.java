@@ -131,11 +131,14 @@ public class LogisticaAreas {
      * @return lista de sugestões de trocas vantajosas para ambos os proprietários.
      */
     public List<SugestaoTroca> sugerirTrocas(int numTrocas, boolean usarCriteriosAvancados) {
+        if (numTrocas <= 0) return new ArrayList<>();
+
         Set<PropriedadeRustica> propriedadesSet = connector.obterPropriedadesComAdjacentes();
         List<PropriedadeRustica> propriedades = new ArrayList<>(propriedadesSet);
         Collections.shuffle(propriedades);
 
         List<SugestaoTroca> sugestoes = new ArrayList<>();
+        Set<String> trocasFeitas = new HashSet<>();
 
         for (PropriedadeRustica p1 : propriedades) {
             List<PropriedadeRustica> adjacentes = connector.obterPropriedadesAdjacentes(p1.getObjectId());
@@ -158,9 +161,9 @@ public class LogisticaAreas {
 
                 if (usarCriteriosAvancados) {
                     comparator = comparator
-                            .thenComparing((PropriedadeRustica p3) -> !p1.getFreguesia().equals(p3.getFreguesia()))
-                            .thenComparingInt((PropriedadeRustica p3) -> {
-                                int adj1 = connector.obterPropriedadesAdjacentes(p1.getObjectId()).size();
+                            .thenComparing(p3 -> !p1.getFreguesia().equals(p3.getFreguesia()))
+                            .thenComparingInt(p3 -> {
+                                int adj1 = adjacentes.size();
                                 int adj3 = connector.obterPropriedadesAdjacentes(p3.getObjectId()).size();
                                 return Math.abs(adj1 - adj3);
                             });
@@ -171,27 +174,31 @@ public class LogisticaAreas {
                 for (PropriedadeRustica p3 : propriedadesDono2) {
                     if (p3.getObjectId().equals(p2.getObjectId())) continue;
 
+                    String key = gerarChaveTroca(p1.getObjectId(), p3.getObjectId());
+                    if (trocasFeitas.contains(key)) continue;
+
                     try {
                         double area1 = Double.parseDouble(p1.getShapeArea());
                         double area3 = Double.parseDouble(p3.getShapeArea());
                         double areaDiff = Math.abs(area1 - area3);
 
-                        double areaDono1Antes = calculaMediaAgrupada("municipio", p1.getMunicipio());
-                        double areaDono2Antes = p1.getMunicipio().equals(p3.getMunicipio())
-                                ? areaDono1Antes
+                        double mediaAntesDono1 = calculaMediaAgrupada("municipio", p1.getMunicipio());
+                        double mediaAntesDono2 = p1.getMunicipio().equals(p3.getMunicipio())
+                                ? mediaAntesDono1
                                 : calculaMediaAgrupada("municipio", p3.getMunicipio());
 
                         connector.trocarProprietarios(p1.getObjectId(), p3.getOwner(), p3.getObjectId(), p1.getOwner());
 
-                        double areaDono1Depois = calculaMediaAgrupada("municipio", p1.getMunicipio());
-                        double areaDono2Depois = p1.getMunicipio().equals(p3.getMunicipio())
-                                ? areaDono1Depois
+                        double mediaDepoisDono1 = calculaMediaAgrupada("municipio", p1.getMunicipio());
+                        double mediaDepoisDono2 = p1.getMunicipio().equals(p3.getMunicipio())
+                                ? mediaDepoisDono1
                                 : calculaMediaAgrupada("municipio", p3.getMunicipio());
 
                         connector.reverterProprietarios(p1.getObjectId(), p1.getOwner(), p3.getObjectId(), p3.getOwner());
 
-                        if (areaDono1Depois > areaDono1Antes && areaDono2Depois > areaDono2Antes) {
+                        if (mediaDepoisDono1 > mediaAntesDono1 && mediaDepoisDono2 > mediaAntesDono2) {
                             sugestoes.add(new SugestaoTroca(p1, p3, areaDiff));
+                            trocasFeitas.add(key);
                             if (sugestoes.size() == numTrocas) {
                                 return sugestoes;
                             }
@@ -205,6 +212,10 @@ public class LogisticaAreas {
         }
 
         return sugestoes;
+    }
+
+    private String gerarChaveTroca(String id1, String id2) {
+        return id1.compareTo(id2) < 0 ? id1 + "_" + id2 : id2 + "_" + id1;
     }
 
 }
