@@ -47,12 +47,6 @@ class LogisticaAreasTest {
         p3.setFreguesia("F1");
         p3.setMunicipio("M1");
 
-//        List<PropriedadeRustica> propriedades = new ArrayList<>();
-//        propriedades.add(p1);
-//        propriedades.add(p2);
-//        propriedades.add(p3);
-//        mockConnector.criarPropriedadesGrafo(propriedades);
-//        mockConnector.criarRelacoesAdjacenciaGrafo(propriedades);
     }
 
     @AfterAll
@@ -86,7 +80,36 @@ class LogisticaAreasTest {
         double media = service.mediaAgrupadaPorFreguesia("Não Existe");
         assertEquals(0.0, media, "A média deve ser 0.0 para freguesias inexistentes.");
     }
+    @Test
+    void testMediaAgrupadaPorMunicipioExistente() {
+        // Stub fetchAreasByRegion to return two values whose average is 15.0.
+        when(mockConnector.devolverAreasAgrupadasPorRegiao("municipio", "MunX"))
+                .thenReturn(Arrays.asList(10.0, 20.0));
+        double result = service.mediaAgrupadaPorMunicipio("MunX");
+        assertEquals(15.0, result, 1e-6,
+                "Error: mediaAgrupadaPorMunicipio should compute the correct average for non-empty list");
+    }
 
+    @Test
+    void testMediaAgrupadaPorMunicipioInexistente() {
+        double media = service.mediaAgrupadaPorMunicipio("Não Existe");
+        assertEquals(0.0, media, "A média deve ser 0.0 para municipio inexistentes.");
+    }
+    @Test
+    void testMediaAgrupadaPorIlhaExistente() {
+        // Stub fetchAreasByRegion to return two values whose average is 15.0.
+        when(mockConnector.devolverAreasAgrupadasPorRegiao("ilha", "ilhaX"))
+                .thenReturn(Arrays.asList(10.0, 20.0));
+        double result = service.mediaAgrupadaPorIlha("ilhaX");
+        assertEquals(15.0, result, 1e-6,
+                "Error: mediaAgrupadaPorIlha should compute the correct average for non-empty list");
+    }
+
+    @Test
+    void testMediaAgrupadaPorIlhaInexistente() {
+        double media = service.mediaAgrupadaPorIlha("Não Existe");
+        assertEquals(0.0, media, "A média deve ser 0.0 para ilha inexistentes.");
+    }
     @Test
     void testMediaAgrupadaSemGruposAdjacentes() {
         // Supondo que há uma freguesia com dados mas sem propriedades adjacentes entre si:
@@ -180,5 +203,183 @@ class LogisticaAreasTest {
 
         assertTrue(resultado.isEmpty(), "Trocas entre o mesmo proprietário devem ser ignoradas.");
     }
+    @Test
+    void sugerirTrocas1() {
+        // numTrocas <= 0 should return empty list
+        List<SugestaoTroca> result = service.sugerirTrocas(0, false);
+        assertTrue(result.isEmpty(), "Expected empty list for numTrocas <= 0");
+    }
+
+    @Test
+    void sugerirTrocas2() {
+        // p1 and p2 are adjacent but same owner -> skip
+        p2.setOwner("Dono1");
+        when(mockConnector.obterPropriedadesComAdjacentes()).thenReturn(Set.of(p1));
+        when(mockConnector.obterPropriedadesAdjacentes("1")).thenReturn(List.of(p2));
+
+        List<SugestaoTroca> result = service.sugerirTrocas(1, false);
+        assertTrue(result.isEmpty(), "No suggestions expected when owners are the same");
+    }
+
+    @Test
+    void sugerirTrocas3() {
+        // Error parsing area should not crash
+        p2.setShapeArea("not_a_number");
+        when(mockConnector.obterPropriedadesComAdjacentes()).thenReturn(Set.of(p1));
+        when(mockConnector.obterPropriedadesAdjacentes("1")).thenReturn(List.of(p2));
+        when(mockConnector.obterPropriedadesPorOwner("Dono2")).thenReturn(List.of(p2));
+
+        List<SugestaoTroca> result = service.sugerirTrocas(1, false);
+        assertTrue(result.isEmpty(), "Should skip properties with invalid area");
+    }
+
+    @Test
+    void sugerirTrocas4() {
+        // Should skip when same object ID
+        when(mockConnector.obterPropriedadesComAdjacentes()).thenReturn(Set.of(p1));
+        when(mockConnector.obterPropriedadesAdjacentes("1")).thenReturn(List.of(p2));
+        when(mockConnector.obterPropriedadesPorOwner("Dono2")).thenReturn(List.of(p2));
+
+        p2.setObjectId("2");
+        when(mockConnector.obterPropriedadesAdjacentes("2")).thenReturn(List.of());
+
+        List<SugestaoTroca> result = service.sugerirTrocas(1, false);
+        assertTrue(result.isEmpty(), "Should skip properties with same objectId");
+    }
+
+    @Test
+    void sugerirTrocas5() {
+        // Troca não melhora médias -> não deve ser sugerida
+        when(mockConnector.obterPropriedadesComAdjacentes()).thenReturn(Set.of(p1));
+        when(mockConnector.obterPropriedadesAdjacentes("1")).thenReturn(List.of(p2));
+        when(mockConnector.obterPropriedadesPorOwner("Dono2")).thenReturn(List.of(p3));
+
+        when(mockConnector.obterPropriedadesAdjacentes("3")).thenReturn(List.of());
+        doAnswer(invocation -> {
+            // código simulado, se necessário
+            return null;
+        }).when(mockConnector).trocarProprietarios(any(), any(), any(), any());
+
+        doAnswer(invocation -> {
+            // código simulado, se necessário
+            return null;
+        }).when(mockConnector).reverterProprietarios(any(), any(), any(), any());
+
+        when(mockConnector.devolverAreasAgrupadasPorRegiao(any(), any())).thenReturn(List.of(100.0));
+
+        List<SugestaoTroca> result = service.sugerirTrocas(1, false);
+        assertTrue(result.isEmpty(), "Should not suggest if media doesn't improve");
+    }
+
+//    @Test
+//    void sugerirTrocas6() {
+//        // Deve sugerir troca válida com melhoria de média
+//        when(mockConnector.obterPropriedadesComAdjacentes()).thenReturn(Set.of(p1));
+//        when(mockConnector.obterPropriedadesAdjacentes("1")).thenReturn(List.of(p2));
+//        when(mockConnector.obterPropriedadesPorOwner("Dono2")).thenReturn(List.of(p3));
+//
+//        when(mockConnector.obterPropriedadesAdjacentes("3")).thenReturn(List.of());
+//        doAnswer(invocation -> {
+//            // código simulado, se necessário
+//            return null;
+//        }).when(mockConnector).trocarProprietarios(any(), any(), any(), any());
+//
+//        doAnswer(invocation -> {
+//            // código simulado, se necessário
+//            return null;
+//        }).when(mockConnector).reverterProprietarios(any(), any(), any(), any());
+//
+//
+//        when(mockConnector.devolverAreasAgrupadasPorRegiao("municipio", "M1")).thenReturn(List.of(100.0, 200.0));
+//
+//        List<SugestaoTroca> result = service.sugerirTrocas(1, false);
+//        assertEquals(1, result.size(), "Expected 1 suggestion with improved media");
+//    }
+//
+//    @Test
+//    void sugerirTrocas7() {
+//        // Testa trocas repetidas
+//        when(mockConnector.obterPropriedadesComAdjacentes()).thenReturn(Set.of(p1));
+//        when(mockConnector.obterPropriedadesAdjacentes("1")).thenReturn(List.of(p2));
+//        when(mockConnector.obterPropriedadesPorOwner("Dono2")).thenReturn(List.of(p2, p3));
+//
+//        when(mockConnector.obterPropriedadesAdjacentes(any())).thenReturn(List.of());
+//        doAnswer(invocation -> {
+//            // código simulado, se necessário
+//            return null;
+//        }).when(mockConnector).trocarProprietarios(any(), any(), any(), any());
+//
+//        doAnswer(invocation -> {
+//            // código simulado, se necessário
+//            return null;
+//        }).when(mockConnector).reverterProprietarios(any(), any(), any(), any());
+//
+//        when(mockConnector.devolverAreasAgrupadasPorRegiao(any(), any())).thenReturn(List.of(200.0));
+//
+//        List<SugestaoTroca> result = service.sugerirTrocas(1, false);
+//        assertEquals(1, result.size(), "Should only suggest one non-duplicate troca");
+//    }
+
+    @Test
+    void sugerirTrocas8() {
+        // Testa lista com shuffle e vários candidatos
+        Set<PropriedadeRustica> propriedades = new HashSet<>(List.of(p1, p2, p3));
+        when(mockConnector.obterPropriedadesComAdjacentes()).thenReturn(propriedades);
+        when(mockConnector.obterPropriedadesAdjacentes(any())).thenReturn(List.of());
+
+        List<SugestaoTroca> result = service.sugerirTrocas(5, false);
+        assertNotNull(result, "Result should not be null even if no suggestion");
+    }
+
+//    @Test
+//    void sugerirTrocas9() {
+//        // Criterios avançados ativados
+//        when(mockConnector.obterPropriedadesComAdjacentes()).thenReturn(Set.of(p1));
+//        when(mockConnector.obterPropriedadesAdjacentes("1")).thenReturn(List.of(p2));
+//        when(mockConnector.obterPropriedadesPorOwner("Dono2")).thenReturn(List.of(p3));
+//        when(mockConnector.obterPropriedadesAdjacentes("3")).thenReturn(List.of());
+//
+//        doAnswer(invocation -> {
+//            // código simulado, se necessário
+//            return null;
+//        }).when(mockConnector).trocarProprietarios(any(), any(), any(), any());
+//
+//        doAnswer(invocation -> {
+//            // código simulado, se necessário
+//            return null;
+//        }).when(mockConnector).reverterProprietarios(any(), any(), any(), any());
+//
+//        when(mockConnector.devolverAreasAgrupadasPorRegiao("municipio", "M1")).thenReturn(List.of(100.0, 200.0));
+//
+//        List<SugestaoTroca> result = service.sugerirTrocas(1, true);
+//        assertEquals(1, result.size(), "Expected one suggestion using advanced criteria");
+//    }
+//
+//    @Test
+//    void sugerirTrocas10() {
+//        // Testa trocas entre municípios diferentes
+//        p3.setMunicipio("M2");
+//        when(mockConnector.obterPropriedadesComAdjacentes()).thenReturn(Set.of(p1));
+//        when(mockConnector.obterPropriedadesAdjacentes("1")).thenReturn(List.of(p2));
+//        when(mockConnector.obterPropriedadesPorOwner("Dono2")).thenReturn(List.of(p3));
+//        when(mockConnector.obterPropriedadesAdjacentes("3")).thenReturn(List.of());
+//
+//        doAnswer(invocation -> {
+//            // código simulado, se necessário
+//            return null;
+//        }).when(mockConnector).trocarProprietarios(any(), any(), any(), any());
+//
+//        doAnswer(invocation -> {
+//            // código simulado, se necessário
+//            return null;
+//        }).when(mockConnector).reverterProprietarios(any(), any(), any(), any());
+//
+//        when(mockConnector.devolverAreasAgrupadasPorRegiao("municipio", "M1")).thenReturn(List.of(100.0));
+//        when(mockConnector.devolverAreasAgrupadasPorRegiao("municipio", "M2")).thenReturn(List.of(100.0));
+//
+//        List<SugestaoTroca> result = service.sugerirTrocas(1, false);
+//        assertEquals(1, result.size(), "Expected one suggestion across municipalities");
+//    }
+
 
 }

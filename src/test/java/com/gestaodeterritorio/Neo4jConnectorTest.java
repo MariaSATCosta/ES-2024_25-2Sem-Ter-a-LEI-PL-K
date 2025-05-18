@@ -4,7 +4,6 @@ import org.junit.jupiter.api.*;
 import org.neo4j.driver.*;
 import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
-import org.locationtech.jts.geom.Geometry;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -51,13 +50,14 @@ public class Neo4jConnectorTest {
         }
     }
 
+
     /**
      * Helper method to populate a PropriedadeRustica instance via reflection.
      * Uses the production PropriedadeRustica class.
      */
     private PropriedadeRustica createPropriedade(String objectId, String parId, String parNum,
                                                  String shapeLength, String shapeArea, String geometry,
-                                                 String owner, String freguesia, String municipio, String ilha)
+                                                 String owner, String freguesia, String municipio)
             throws Exception {
         PropriedadeRustica prop = new PropriedadeRustica();
 
@@ -99,7 +99,7 @@ public class Neo4jConnectorTest {
 
         field = PropriedadeRustica.class.getDeclaredField("ilha");
         field.setAccessible(true);
-        field.set(prop, ilha);
+        field.set(prop, "ilha");
 
         return prop;
     }
@@ -148,7 +148,7 @@ public class Neo4jConnectorTest {
             });
         }
         List<PropriedadeRustica> props = new ArrayList<>();
-        props.add(createPropriedade("1", "p1", "num1", "10", "100", "POINT(0 0)", "owner", "freg", "mun", "ilha"));
+        props.add(createPropriedade("1", "p1", "num1", "10", "100", "POINT(0 0)", "owner", "freg", "mun"));
         connector.criarPropriedadesGrafo(props);
         try (Session session = testDriver.session()) {
             long count = session.readTransaction(tx -> tx.run("MATCH (n:Propriedade) RETURN count(n) AS count")
@@ -161,8 +161,8 @@ public class Neo4jConnectorTest {
     public void criarPropriedadesGrafo3() throws Exception {
         // Path 3: Insert two new properties.
         List<PropriedadeRustica> props = new ArrayList<>();
-        props.add(createPropriedade("1", "p1", "num1", "10", "100", "POINT(0 0)", "owner1", "freg1", "mun1", "ilha"));
-        props.add(createPropriedade("2", "p2", "num2", "12", "150", "POINT(1 1)", "owner2", "freg2", "mun2", "ilha"));
+        props.add(createPropriedade("1", "p1", "num1", "10", "100", "POINT(0 0)", "owner1", "freg1", "mun1"));
+        props.add(createPropriedade("2", "p2", "num2", "12", "150", "POINT(1 1)", "owner2", "freg2", "mun2"));
         connector.criarPropriedadesGrafo(props);
         try (Session session = testDriver.session()) {
             long count = session.readTransaction(tx -> tx.run("MATCH (n:Propriedade) RETURN count(n) AS count")
@@ -176,7 +176,7 @@ public class Neo4jConnectorTest {
     public void criarRelacoesAdjacenciaGrafo1() throws Exception {
         // Path 1: A property with invalid geometry in index creation should yield no relationships.
         List<PropriedadeRustica> props = new ArrayList<>();
-        props.add(createPropriedade("A", "pA", "numA", "10", "100", "INVALID_WKT", "ownerA", "fregA", "munA", "ilha"));
+        props.add(createPropriedade("A", "pA", "numA", "10", "100", "INVALID_WKT", "ownerA", "fregA", "munA"));
         connector.criarRelacoesAdjacenciaGrafo(props);
         try (Session session = testDriver.session()) {
             long count = session.readTransaction(tx ->
@@ -191,9 +191,9 @@ public class Neo4jConnectorTest {
     public void criarRelacoesAdjacenciaGrafo2() throws Exception {
         // Path 2: First property's geometry is invalid so it is skipped.
         List<PropriedadeRustica> props = new ArrayList<>();
-        props.add(createPropriedade("A", "pA", "numA", "10", "100", "INVALID_WKT", "ownerA", "fregA", "munA", "ilha"));
+        props.add(createPropriedade("A", "pA", "numA", "10", "100", "INVALID_WKT", "ownerA", "fregA", "munA"));
         props.add(createPropriedade("B", "pB", "numB", "12", "150",
-                "POLYGON((2 2, 4 2, 4 4, 2 4, 2 2))", "ownerB", "fregB", "munB", "ilha"));
+                "POLYGON((2 2, 4 2, 4 4, 2 4, 2 2))", "ownerB", "fregB", "munB"));
         connector.criarRelacoesAdjacenciaGrafo(props);
         try (Session session = testDriver.session()) {
             long count = session.readTransaction(tx ->
@@ -209,7 +209,7 @@ public class Neo4jConnectorTest {
         // Path 3: Self-comparison: property compared with itself should yield no relationship.
         List<PropriedadeRustica> props = new ArrayList<>();
         PropriedadeRustica prop = createPropriedade("A", "pA", "numA", "10", "100",
-                "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))", "ownerA", "fregA", "munA", "ilha");
+                "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))", "ownerA", "fregA", "munA");
         props.add(prop);
         props.add(prop); // same instance added twice.
         connector.criarRelacoesAdjacenciaGrafo(props);
@@ -227,9 +227,9 @@ public class Neo4jConnectorTest {
         // Path 4: Candidate property has invalid geometry.
         List<PropriedadeRustica> props = new ArrayList<>();
         props.add(createPropriedade("A", "pA", "numA", "10", "100",
-                "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))", "ownerA", "fregA", "munA", "ilha"));
+                "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))", "ownerA", "fregA", "munA"));
         props.add(createPropriedade("B", "pB", "numB", "12", "150", "INVALID_WKT",
-                "ownerB", "fregB", "munB", "ilha"));
+                "ownerB", "fregB", "munB"));
         connector.criarRelacoesAdjacenciaGrafo(props);
         try (Session session = testDriver.session()) {
             long count = session.readTransaction(tx ->
@@ -245,7 +245,7 @@ public class Neo4jConnectorTest {
         // Path 5: Only one property exists, so no candidate exists to form a relationship.
         List<PropriedadeRustica> props = new ArrayList<>();
         props.add(createPropriedade("A", "pA", "numA", "10", "100",
-                "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))", "ownerA", "fregA", "munA", "ilha"));
+                "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))", "ownerA", "fregA", "munA"));
         connector.criarRelacoesAdjacenciaGrafo(props);
         try (Session session = testDriver.session()) {
             long count = session.readTransaction(tx ->
@@ -261,9 +261,9 @@ public class Neo4jConnectorTest {
         // Path 6: ObjectId ordering condition: if p1.getObjectId() is not less than p2.getObjectId(), no relationship is formed.
         List<PropriedadeRustica> props = new ArrayList<>();
         props.add(createPropriedade("B", "pB", "numB", "10", "100",
-                "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))", "ownerB", "fregB", "munB", "ilha"));
+                "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))", "ownerB", "fregB", "munB"));
         props.add(createPropriedade("A", "pA", "numA", "12", "150",
-                "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))", "ownerA", "fregA", "munA", "ilha"));
+                "POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))", "ownerA", "fregA", "munA"));
         connector.criarRelacoesAdjacenciaGrafo(props);
         try (Session session = testDriver.session()) {
             long count = session.readTransaction(tx ->
@@ -301,6 +301,42 @@ public class Neo4jConnectorTest {
         @SuppressWarnings("unchecked")
         Set<String> result = (Set<String>) method.invoke(connector);
         assertTrue(result.contains("A-B"), "Error: Expected relationship 'A-B' to be present in the set"); // Error if not contained.
+    }
+
+    @Test
+    public void obterPropriedadesPorOwnerTest() throws Exception {
+        // Arrange
+        PropriedadeRustica prop1 = createPropriedade("id1", "par1", "1", "10.0", "100.0", "geom1", "DonoA", "F1", "M1");
+        PropriedadeRustica prop2 = createPropriedade("id2", "par2", "2", "20.0", "200.0", "geom2", "DonoB", "F2", "M2");
+
+        connector.criarPropriedadesGrafo(List.of(prop1, prop2));
+
+        // Act
+        List<PropriedadeRustica> propsDonoA = connector.obterPropriedadesPorOwner("DonoA");
+
+        // Assert
+        assertEquals(1, propsDonoA.size(), "Erro: Deve retornar exatamente 1 propriedade para DonoA");
+        assertEquals("id1", propsDonoA.get(0).getObjectId(), "Erro: objectId incorreto para DonoA");
+    }
+
+    @Test
+    public void reverterProprietariosTest() throws Exception {
+        // Arrange
+        PropriedadeRustica prop1 = createPropriedade("p1", "par1", "1", "10", "100", "geom", "Ana", "F1", "M1");
+        PropriedadeRustica prop2 = createPropriedade("p2", "par2", "2", "10", "100", "geom", "Bruno", "F2", "M2");
+        connector.criarPropriedadesGrafo(List.of(prop1, prop2));
+
+        connector.trocarProprietarios("p1", "Bruno", "p2", "Ana");
+
+        // Act
+        connector.reverterProprietarios("p1", "Ana", "p2", "Bruno");
+
+        // Assert
+        List<PropriedadeRustica> propsAna = connector.obterPropriedadesPorOwner("Ana");
+        List<PropriedadeRustica> propsBruno = connector.obterPropriedadesPorOwner("Bruno");
+
+        assertTrue(propsAna.stream().anyMatch(p -> p.getObjectId().equals("p1")), "Erro: p1 deveria voltar para Ana");
+        assertTrue(propsBruno.stream().anyMatch(p -> p.getObjectId().equals("p2")), "Erro: p2 deveria voltar para Bruno");
     }
 
 }
