@@ -4,8 +4,8 @@
 <!DOCTYPE html>
 <html id="htmlId">
 <head>
-  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>Coverage Report > PropriedadeRustica</title>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > LogisticaAreas</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope:     <a href="../../index.html">all classes</a>
     <a href="../index.html">com.gestaodeterritorio</a>
 </div>
 
-<h1>Coverage Summary for Class: PropriedadeRustica (com.gestaodeterritorio)</h1>
+<h1>Coverage Summary for Class: LogisticaAreas (com.gestaodeterritorio)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -37,11 +37,15 @@ Current scope:     <a href="../../index.html">all classes</a>
 </th>
 <th class="coverageStat 
 ">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
   Line, %
 </th>
 </tr>
 <tr>
-  <td class="name">PropriedadeRustica</td>
+  <td class="name">LogisticaAreas</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -52,18 +56,26 @@ Current scope:     <a href="../../index.html">all classes</a>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    84.6%
   </span>
   <span class="absValue">
-    (12/12)
+    (11/13)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    68.8%
   </span>
   <span class="absValue">
-    (12/12)
+    (22/32)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.2%
+  </span>
+  <span class="absValue">
+    (52/71)
   </span>
 </td>
 </tr>
@@ -77,85 +89,237 @@ Current scope:     <a href="../../index.html">all classes</a>
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.gestaodeterritorio;
 &nbsp;
-&nbsp;import com.opencsv.bean.CsvBindByName;
+&nbsp;import java.util.*;
 &nbsp;
-<b class="fc">&nbsp;public class PropriedadeRustica {</b>
+&nbsp;/**
+&nbsp; * Classe respons·vel por operaÁıes das propriedades, como pelo c·lculo de mÈdias das ·reas de propriedades
+&nbsp; * com base em diferentes divisıes geogr·ficas (freguesia, municÌpio ou ilha) e sugestıes de troca.
+&nbsp; */
+&nbsp;public class LogisticaAreas {
 &nbsp;
-&nbsp;    @CsvBindByName(column = &quot;OBJECTID&quot;)
-&nbsp;    private String objectId;
+&nbsp;    private final Neo4jConnector connector;
 &nbsp;
-&nbsp;    @CsvBindByName(column = &quot;PAR_ID&quot;)
-&nbsp;    private String parId;
-&nbsp;
-&nbsp;    @CsvBindByName(column = &quot;PAR_NUM&quot;)
-&nbsp;    private String parNum;
-&nbsp;
-&nbsp;    @CsvBindByName(column = &quot;Shape_Length&quot;)
-&nbsp;    private String shapeLength;
-&nbsp;
-&nbsp;    @CsvBindByName(column = &quot;Shape_Area&quot;)
-&nbsp;    private String shapeArea;
-&nbsp;
-&nbsp;    @CsvBindByName(column = &quot;geometry&quot;)
-&nbsp;    private String geometry;
-&nbsp;
-&nbsp;    @CsvBindByName(column = &quot;OWNER&quot;)
-&nbsp;    private String owner;
-&nbsp;
-&nbsp;    @CsvBindByName(column = &quot;Freguesia&quot;)
-&nbsp;    private String freguesia;
-&nbsp;
-&nbsp;    @CsvBindByName(column = &quot;Municipio&quot;)
-&nbsp;    private String municipio;
-&nbsp;
-&nbsp;    @CsvBindByName(column = &quot;Ilha&quot;)
-&nbsp;    private String ilha;
-&nbsp;
-&nbsp;    public String getObjectId() {
-<b class="fc">&nbsp;        return objectId;</b>
+&nbsp;    /**
+&nbsp;     * Construtor da classe LogisticaAreas.
+&nbsp;     *
+&nbsp;     * @param connector inst‚ncia do conector Neo4j para realizar as consultas.
+&nbsp;     */
+<b class="fc">&nbsp;    public LogisticaAreas(Neo4jConnector connector) {</b>
+<b class="fc">&nbsp;        this.connector = connector;</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    public String getParId() {
-<b class="fc">&nbsp;        return parId;</b>
+&nbsp;    /**
+&nbsp;     * Calcula a mÈdia das ·reas das propriedades numa determinada freguesia.
+&nbsp;     *
+&nbsp;     * @param nomeFreguesia nome da freguesia a filtrar.
+&nbsp;     * @return mÈdia das ·reas das propriedades, ou 0.0 se nenhuma for encontrada.
+&nbsp;     */
+&nbsp;    public double mediaPorFreguesia(String nomeFreguesia) {
+<b class="fc">&nbsp;        return calculaMedia(&quot;freguesia&quot;, nomeFreguesia);</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    public String getParNum(){
-<b class="fc">&nbsp;        return parNum;</b>
+&nbsp;    /**
+&nbsp;     * Calcula a mÈdia das ·reas das propriedades num determinado municÌpio.
+&nbsp;     *
+&nbsp;     * @param nomeMunicipio nome do municÌpio a filtrar.
+&nbsp;     * @return mÈdia das ·reas das propriedades, ou 0.0 se nenhuma for encontrada.
+&nbsp;     */
+&nbsp;    public double mediaPorMunicipio(String nomeMunicipio) {
+<b class="fc">&nbsp;        return calculaMedia(&quot;municipio&quot;, nomeMunicipio);</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    public String getShapeLength() {
-<b class="fc">&nbsp;        return shapeLength;</b>
+&nbsp;    /**
+&nbsp;     * Calcula a mÈdia das ·reas das propriedades numa determinada ilha.
+&nbsp;     *
+&nbsp;     * @param nomeIlha nome da ilha a filtrar.
+&nbsp;     * @return mÈdia das ·reas das propriedades, ou 0.0 se nenhuma for encontrada.
+&nbsp;     */
+&nbsp;    public double mediaPorIlha(String nomeIlha) {
+<b class="fc">&nbsp;        return calculaMedia(&quot;ilha&quot;, nomeIlha);</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    public String getShapeArea(){
-<b class="fc">&nbsp;        return shapeArea;</b>
+&nbsp;    /**
+&nbsp;     * MÈtodo auxiliar que calcula a mÈdia de ·reas para um determinado campo e valor de regi„o.
+&nbsp;     *
+&nbsp;     * @param campoRegiao nome do campo geogr·fico a filtrar (ex: freguesia, municÌpio, ilha).
+&nbsp;     * @param valorRegiao valor a filtrar no campo indicado.
+&nbsp;     * @return mÈdia das ·reas das propriedades, ou 0.0 se nenhuma for encontrada.
+&nbsp;     */
+&nbsp;    public double calculaMedia(String campoRegiao, String valorRegiao) {
+<b class="fc">&nbsp;        List&lt;Double&gt; areas = connector.devolverAreasPorRegiao(campoRegiao, valorRegiao);</b>
+<b class="fc">&nbsp;        if (areas.isEmpty()) {</b>
+<b class="fc">&nbsp;            return 0.0;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        double soma = areas.stream().mapToDouble(Double::doubleValue).sum();</b>
+<b class="fc">&nbsp;        return soma / areas.size();</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    public String getGeometry() {
-<b class="fc">&nbsp;        return geometry;</b>
+&nbsp;    /**
+&nbsp;     * Calcula a mÈdia das ·reas agrupadas por adjacÍncia e propriet·rio numa freguesia.
+&nbsp;     *
+&nbsp;     * @param nomeFreguesia nome da freguesia a filtrar.
+&nbsp;     * @return mÈdia das ·reas agrupadas, ou 0.0 se nenhuma for encontrada.
+&nbsp;     */
+&nbsp;    public double mediaAgrupadaPorFreguesia(String nomeFreguesia) {
+<b class="fc">&nbsp;        return calculaMediaAgrupada(&quot;freguesia&quot;, nomeFreguesia);</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    public String getOwner() {
-<b class="fc">&nbsp;        return owner;</b>
+&nbsp;    /**
+&nbsp;     * Calcula a mÈdia das ·reas agrupadas por adjacÍncia e propriet·rio num municÌpio.
+&nbsp;     *
+&nbsp;     * @param nomeMunicipio nome do municÌpio a filtrar.
+&nbsp;     * @return mÈdia das ·reas agrupadas, ou 0.0 se nenhuma for encontrada.
+&nbsp;     */
+&nbsp;    public double mediaAgrupadaPorMunicipio(String nomeMunicipio) {
+<b class="fc">&nbsp;        return calculaMediaAgrupada(&quot;municipio&quot;, nomeMunicipio);</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    public String getFreguesia() {
-<b class="fc">&nbsp;        return freguesia;</b>
+&nbsp;    /**
+&nbsp;     * Calcula a mÈdia das ·reas agrupadas por adjacÍncia e propriet·rio numa ilha.
+&nbsp;     *
+&nbsp;     * @param nomeIlha nome da ilha a filtrar.
+&nbsp;     * @return mÈdia das ·reas agrupadas, ou 0.0 se nenhuma for encontrada.
+&nbsp;     */
+&nbsp;    public double mediaAgrupadaPorIlha(String nomeIlha) {
+<b class="fc">&nbsp;        return calculaMediaAgrupada(&quot;ilha&quot;, nomeIlha);</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    public String getMunicipio() {
-<b class="fc">&nbsp;        return municipio;</b>
+&nbsp;    /**
+&nbsp;     * MÈtodo auxiliar que calcula a mÈdia de ·reas agrupadas por adjacÍncia e propriet·rio,
+&nbsp;     * para um determinado campo e valor de regi„o.
+&nbsp;     *
+&nbsp;     * @param campoRegiao nome do campo geogr·fico (ex: freguesia, municÌpio, ilha).
+&nbsp;     * @param valorRegiao valor especÌfico a filtrar.
+&nbsp;     * @return mÈdia das ·reas agrupadas, ou 0.0 se nenhuma for encontrada.
+&nbsp;     */
+&nbsp;    public double calculaMediaAgrupada(String campoRegiao, String valorRegiao) {
+<b class="fc">&nbsp;        List&lt;Double&gt; areas = connector.devolverAreasAgrupadasPorRegiao(campoRegiao, valorRegiao);</b>
+<b class="fc">&nbsp;        if (areas.isEmpty()) {</b>
+<b class="fc">&nbsp;            return 0.0;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        double soma = areas.stream().mapToDouble(Double::doubleValue).sum();</b>
+<b class="fc">&nbsp;        return soma / areas.size();</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    public String getIlha() {
-<b class="fc">&nbsp;        return ilha;</b>
+&nbsp;    /**
+&nbsp;     * Sugere um n˙mero limitado de trocas de propriedades entre propriet·rios diferentes,
+&nbsp;     * simulando a troca e revers„o de propriedades para verificar se a mÈdia das ·reas agrupadas
+&nbsp;     * (por adjacÍncia e propriet·rio) no respetivo municÌpio de ambas as partes melhora apÛs a troca.
+&nbsp;     *
+&nbsp;     * O critÈrio base de troca È sempre a proximidade de ·rea entre propriedades adjacentes
+&nbsp;     * de donos distintos. Opcionalmente, podem ser usados critÈrios adicionais para ordenar
+&nbsp;     * as propriedades candidatas:
+&nbsp;     * &lt;ul&gt;
+&nbsp;     *     &lt;li&gt;&lt;strong&gt;SemelhanÁa de ·rea:&lt;/strong&gt; diferenÁa absoluta de ·reas.&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;&lt;strong&gt;Mesma freguesia:&lt;/strong&gt; prioriza propriedades da mesma freguesia.&lt;/li&gt;
+&nbsp;     *     &lt;li&gt;&lt;strong&gt;SemelhanÁa de adjacentes:&lt;/strong&gt; prioriza n˙mero semelhante de propriedades adjacentes.&lt;/li&gt;
+&nbsp;     * &lt;/ul&gt;
+&nbsp;     *
+&nbsp;     * @param numTrocas n˙mero m·ximo de sugestıes de trocas a devolver.
+&nbsp;     * @param usarCriteriosAvancados se verdadeiro, aplica critÈrios adicionais alÈm da ·rea.
+&nbsp;     * @return lista de sugestıes de trocas vantajosas para ambos os propriet·rios.
+&nbsp;     */
+&nbsp;    public List&lt;SugestaoTroca&gt; sugerirTrocas(int numTrocas, boolean usarCriteriosAvancados) {
+<b class="fc">&nbsp;        if (numTrocas &lt;= 0) return new ArrayList&lt;&gt;();</b>
+&nbsp;
+<b class="fc">&nbsp;        Set&lt;PropriedadeRustica&gt; propriedadesSet = connector.obterPropriedadesComAdjacentes();</b>
+<b class="fc">&nbsp;        List&lt;PropriedadeRustica&gt; propriedades = new ArrayList&lt;&gt;(propriedadesSet);</b>
+<b class="fc">&nbsp;        Collections.shuffle(propriedades);</b>
+&nbsp;
+<b class="fc">&nbsp;        List&lt;SugestaoTroca&gt; sugestoes = new ArrayList&lt;&gt;();</b>
+<b class="fc">&nbsp;        Set&lt;String&gt; trocasFeitas = new HashSet&lt;&gt;();</b>
+&nbsp;
+<b class="fc">&nbsp;        for (PropriedadeRustica p1 : propriedades) {</b>
+<b class="fc">&nbsp;            List&lt;PropriedadeRustica&gt; adjacentes = connector.obterPropriedadesAdjacentes(p1.getObjectId());</b>
+&nbsp;
+<b class="fc">&nbsp;            for (PropriedadeRustica p2 : adjacentes) {</b>
+<b class="fc">&nbsp;                if (p1.getOwner().equals(p2.getOwner())) continue;</b>
+&nbsp;
+<b class="fc">&nbsp;                List&lt;PropriedadeRustica&gt; propriedadesDono2 = connector.obterPropriedadesPorOwner(p2.getOwner());</b>
+&nbsp;
+<b class="fc">&nbsp;                Comparator&lt;PropriedadeRustica&gt; comparator = Comparator</b>
+<b class="fc">&nbsp;                        .comparingDouble((PropriedadeRustica p3) -&gt; {</b>
+&nbsp;                            try {
+<b class="nc">&nbsp;                                double area1 = Double.parseDouble(p1.getShapeArea());</b>
+<b class="nc">&nbsp;                                double area3 = Double.parseDouble(p3.getShapeArea());</b>
+<b class="nc">&nbsp;                                return Math.abs(area1 - area3);</b>
+<b class="nc">&nbsp;                            } catch (NumberFormatException e) {</b>
+<b class="nc">&nbsp;                                return Double.MAX_VALUE;</b>
+&nbsp;                            }
+&nbsp;                        });
+&nbsp;
+<b class="pc">&nbsp;                if (usarCriteriosAvancados) {</b>
+<b class="nc">&nbsp;                    comparator = comparator</b>
+<b class="nc">&nbsp;                            .thenComparing(p3 -&gt; !p1.getFreguesia().equals(p3.getFreguesia()))</b>
+<b class="nc">&nbsp;                            .thenComparingInt(p3 -&gt; {</b>
+<b class="nc">&nbsp;                                int adj1 = adjacentes.size();</b>
+<b class="nc">&nbsp;                                int adj3 = connector.obterPropriedadesAdjacentes(p3.getObjectId()).size();</b>
+<b class="nc">&nbsp;                                return Math.abs(adj1 - adj3);</b>
+&nbsp;                            });
+&nbsp;                }
+&nbsp;
+&nbsp;                //propriedadesDono2.sort(comparator);
+<b class="fc">&nbsp;                List&lt;PropriedadeRustica&gt; listaMutavel = new ArrayList&lt;&gt;(propriedadesDono2);</b>
+<b class="fc">&nbsp;                listaMutavel.sort(comparator);</b>
+&nbsp;
+&nbsp;
+<b class="fc">&nbsp;                for (PropriedadeRustica p3 : listaMutavel) {</b>
+<b class="fc">&nbsp;                    if (p3.getObjectId().equals(p2.getObjectId())) continue;</b>
+&nbsp;
+<b class="fc">&nbsp;                    String key = gerarChaveTroca(p1.getObjectId(), p3.getObjectId());</b>
+<b class="pc">&nbsp;                    if (trocasFeitas.contains(key)) continue;</b>
+&nbsp;
+&nbsp;                    try {
+<b class="fc">&nbsp;                        double area1 = Double.parseDouble(p1.getShapeArea());</b>
+<b class="fc">&nbsp;                        double area3 = Double.parseDouble(p3.getShapeArea());</b>
+<b class="fc">&nbsp;                        double areaDiff = Math.abs(area1 - area3);</b>
+&nbsp;
+<b class="fc">&nbsp;                        double mediaAntesDono1 = calculaMediaAgrupada(&quot;municipio&quot;, p1.getMunicipio());</b>
+<b class="pc">&nbsp;                        double mediaAntesDono2 = p1.getMunicipio().equals(p3.getMunicipio())</b>
+<b class="fc">&nbsp;                                ? mediaAntesDono1</b>
+<b class="nc">&nbsp;                                : calculaMediaAgrupada(&quot;municipio&quot;, p3.getMunicipio());</b>
+&nbsp;
+<b class="fc">&nbsp;                        connector.trocarProprietarios(p1.getObjectId(), p3.getOwner(), p3.getObjectId(), p1.getOwner());</b>
+&nbsp;
+<b class="fc">&nbsp;                        double mediaDepoisDono1 = calculaMediaAgrupada(&quot;municipio&quot;, p1.getMunicipio());</b>
+<b class="pc">&nbsp;                        double mediaDepoisDono2 = p1.getMunicipio().equals(p3.getMunicipio())</b>
+<b class="fc">&nbsp;                                ? mediaDepoisDono1</b>
+<b class="nc">&nbsp;                                : calculaMediaAgrupada(&quot;municipio&quot;, p3.getMunicipio());</b>
+&nbsp;
+<b class="fc">&nbsp;                        connector.reverterProprietarios(p1.getObjectId(), p1.getOwner(), p3.getObjectId(), p3.getOwner());</b>
+&nbsp;
+<b class="pc">&nbsp;                        if (mediaDepoisDono1 &gt; mediaAntesDono1 &amp;&amp; mediaDepoisDono2 &gt; mediaAntesDono2) {</b>
+<b class="nc">&nbsp;                            sugestoes.add(new SugestaoTroca(p1, p3, areaDiff));</b>
+<b class="nc">&nbsp;                            trocasFeitas.add(key);</b>
+<b class="nc">&nbsp;                            if (sugestoes.size() == numTrocas) {</b>
+<b class="nc">&nbsp;                                return sugestoes;</b>
+&nbsp;                            }
+&nbsp;                        }
+&nbsp;
+<b class="nc">&nbsp;                    } catch (NumberFormatException e) {</b>
+<b class="nc">&nbsp;                        System.err.println(&quot;Erro ao converter ·reas: &quot; + e.getMessage());</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return sugestoes;</b>
+&nbsp;    }
+&nbsp;    /**
+&nbsp;     * Gera uma chave ˙nica para uma troca entre duas identificaÁıes.
+&nbsp;     * A chave È composta pelos dois IDs concatenados em ordem lexicogr·fica crescente,
+&nbsp;     * separados por um underscore (&quot;_&quot;).
+&nbsp;     *
+&nbsp;     * Isso garante que a chave seja a mesma independentemente da ordem dos IDs fornecidos.
+&nbsp;     *
+&nbsp;     * @param id1 Primeiro identificador.
+&nbsp;     * @param id2 Segundo identificador.
+&nbsp;     * @return Uma string que representa a chave ˙nica da troca entre id1 e id2.
+&nbsp;     */
+&nbsp;    private String gerarChaveTroca(String id1, String id2) {
+<b class="pc">&nbsp;        return id1.compareTo(id2) &lt; 0 ? id1 + &quot;_&quot; + id2 : id2 + &quot;_&quot; + id1;</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    @Override
-&nbsp;    public String toString() {
-<b class="fc">&nbsp;        return String.format(&quot;[%s] %s - %s - %s (√Årea: %s) [%s]&quot;,</b>
-&nbsp;                objectId, municipio, freguesia, parNum, shapeArea, ilha);
-&nbsp;    }
 &nbsp;}
 </code>
 </pre>
@@ -180,7 +344,7 @@ Current scope:     <a href="../../index.html">all classes</a>
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2025-04-07 13:25</div>
+    <div style="float:right;">generated on 2025-05-18 02:03</div>
 </div>
 </body>
 </html>
