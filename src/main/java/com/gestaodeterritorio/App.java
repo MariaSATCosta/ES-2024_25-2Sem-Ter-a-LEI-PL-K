@@ -1,7 +1,7 @@
 package com.gestaodeterritorio;
 
+import javax.swing.*;
 import java.util.List;
-import java.util.Scanner;
 
 /**
  * Classe principal da aplicação de Gestão do Território.
@@ -14,6 +14,7 @@ import java.util.Scanner;
  * - Criar conexão com a base de dados Neo4j
  * - Carregar dados de um ficheiro CSV
  * - Criar os nós e relações no grafo
+ * - Criar interface
  */
 public class App {
 
@@ -23,22 +24,25 @@ public class App {
      * @param args argumentos da linha de comandos (não utilizados)
      */
     public static void main(String[] args) {
-        try {
+        SwingUtilities.invokeLater(() -> {
             Neo4jConnector connector = new Neo4jConnector();
 
             CadastroLoader loader = new CadastroLoader();
-            List<PropriedadeRustica> propriedades = loader.carregar("Madeira-Moodle.csv");
+            List<PropriedadeRustica> propriedades = null;
+            try {
+                propriedades = loader.carregar("Madeira-Moodle.csv");
+            } catch (Exception e) {
+                System.err.println("Erro ao carregar o CSV: " + e.getMessage());
+            }
 
+            assert propriedades != null;
             connector.criarPropriedadesGrafo(propriedades);
             connector.criarRelacoesAdjacenciaGrafo(propriedades);
 
-            connector.close();
-        } catch (Exception e) {
-            System.err.println("Erro ao carregar o CSV: " + e.getMessage());
-        }
-
+            LogisticaAreas logistica = new LogisticaAreas(connector);
+            System.out.println(logistica.mediaAgrupadaPorFreguesia("Arco da Calheta"));
+            AppUI app = new AppUI(logistica);
+            app.setVisible(true);
+        });
     }
-
-
-
 }

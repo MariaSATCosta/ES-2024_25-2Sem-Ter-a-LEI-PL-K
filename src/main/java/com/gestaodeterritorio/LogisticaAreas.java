@@ -3,8 +3,8 @@ package com.gestaodeterritorio;
 import java.util.*;
 
 /**
- * Classe responsável pelo cálculo de médias das áreas de propriedades
- * com base em diferentes divisões geográficas (freguesia, município ou ilha).
+ * Classe responsável por operações das propriedades, como pelo cálculo de médias das áreas de propriedades
+ * com base em diferentes divisões geográficas (freguesia, município ou ilha) e sugestões de troca.
  */
 public class LogisticaAreas {
 
@@ -169,9 +169,12 @@ public class LogisticaAreas {
                             });
                 }
 
-                propriedadesDono2.sort(comparator);
+                //propriedadesDono2.sort(comparator);
+                List<PropriedadeRustica> listaMutavel = new ArrayList<>(propriedadesDono2);
+                listaMutavel.sort(comparator);
 
-                for (PropriedadeRustica p3 : propriedadesDono2) {
+
+                for (PropriedadeRustica p3 : listaMutavel) {
                     if (p3.getObjectId().equals(p2.getObjectId())) continue;
 
                     String key = gerarChaveTroca(p1.getObjectId(), p3.getObjectId());
@@ -213,7 +216,17 @@ public class LogisticaAreas {
 
         return sugestoes;
     }
-
+    /**
+     * Gera uma chave única para uma troca entre duas identificações.
+     * A chave é composta pelos dois IDs concatenados em ordem lexicográfica crescente,
+     * separados por um underscore ("_").
+     *
+     * Isso garante que a chave seja a mesma independentemente da ordem dos IDs fornecidos.
+     *
+     * @param id1 Primeiro identificador.
+     * @param id2 Segundo identificador.
+     * @return Uma string que representa a chave única da troca entre id1 e id2.
+     */
     private String gerarChaveTroca(String id1, String id2) {
         return id1.compareTo(id2) < 0 ? id1 + "_" + id2 : id2 + "_" + id1;
     }

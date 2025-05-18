@@ -3,13 +3,22 @@ package com.gestaodeterritorio;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.Objects;
 
+/**
+ * Interface gráfica principal.
+ * Esta classe cria uma janela com duas secções principais:
+ * uma para calcular médias de áreas por tipo e nome de região,
+ * e outra para gerar sugestões de troca baseadas em critérios selecionados.
+ */
 public class AppUI extends JFrame {
-
-    private LogisticaAreas logisticaAreas;
-
+    /**
+     * Construtor que cria a interface gráfica da aplicação.
+     *
+     * @param logisticaAreas Instância da classe LogisticaAreas que fornece
+     *                       os métodos para cálculo de médias e geração de sugestões.
+     */
     public AppUI(LogisticaAreas logisticaAreas) {
-        this.logisticaAreas = logisticaAreas;
 
         setTitle("Logística de Áreas");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -64,7 +73,7 @@ public class AppUI extends JFrame {
 
         // === AÇÕES ===
         calcularMediaBtn.addActionListener((ActionEvent e) -> {
-            String tipo = ((String) tipoCombo.getSelectedItem()).toLowerCase();
+            String tipo = ((String) Objects.requireNonNull(tipoCombo.getSelectedItem())).toLowerCase();
             String nome = nomeField.getText().trim();
 
             double resultado = switch (tipo) {
@@ -79,7 +88,7 @@ public class AppUI extends JFrame {
         });
 
         calcularAgrupadaBtn.addActionListener((ActionEvent e) -> {
-            String tipo = ((String) tipoCombo.getSelectedItem()).toLowerCase();
+            String tipo = ((String) Objects.requireNonNull(tipoCombo.getSelectedItem())).toLowerCase();
             String nome = nomeField.getText().trim();
 
             double resultado = switch (tipo) {

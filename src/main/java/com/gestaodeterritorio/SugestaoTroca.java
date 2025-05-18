@@ -2,7 +2,6 @@ package com.gestaodeterritorio;
 
 /**
  * Representa uma sugestão de troca entre duas propriedades rústicas.
- * A troca é sugerida com base na diferença de áreas entre as duas propriedades.
  */
 public class SugestaoTroca {
 
