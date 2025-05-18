@@ -1,7 +1,12 @@
 package com.gestaodeterritorio;
 
 import org.junit.jupiter.api.Test;
+import org.neo4j.driver.Value;
+import org.neo4j.driver.types.Node;
+
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 
@@ -20,6 +25,34 @@ public class PropriedadeRusticaTest {
         PropriedadeRustica pr = new PropriedadeRustica();
         assertNotNull(pr, "Error: Constructor should create a non-null instance of PropriedadeRustica"); // Error if pr is null.
     }
+
+
+    @Test
+    public void constructorWithNode() {
+        // Mocking Node and Value objects
+        Node node = mock(Node.class);
+        Value value = mock(Value.class);
+
+        // Defining behavior for get("objectId")
+        when(node.get("objectId")).thenReturn(value);
+        when(value.asString()).thenReturn("123");
+
+        // Defining behavior for other fields with default values
+        when(node.get("parId")).thenReturn(value);
+        when(node.get("parNum")).thenReturn(value);
+        when(node.get("shapeArea")).thenReturn(value);
+        when(node.get("geometry")).thenReturn(value);
+        when(node.get("owner")).thenReturn(value);
+        when(node.get("freguesia")).thenReturn(value);
+        when(node.get("municipio")).thenReturn(value);
+        when(node.get("ilha")).thenReturn(value);
+        when(value.asString("")).thenReturn("default");
+
+        PropriedadeRustica pr = new PropriedadeRustica(node);
+        assertNotNull(pr, "Error: Constructor with Node should create a non-null instance of PropriedadeRustica"); // Error if pr is null.
+        assertEquals("123", pr.getObjectId(), "Error: getObjectId should return the value from node"); // Error if objectId is not as expected.
+    }
+
 
     // ------------------ getObjectId Test (CC = 1) ------------------
     @Test

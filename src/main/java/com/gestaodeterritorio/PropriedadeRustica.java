@@ -1,6 +1,7 @@
 package com.gestaodeterritorio;
 
 import com.opencsv.bean.CsvBindByName;
+import org.neo4j.driver.types.Node;
 
 /**
  * Representa uma propriedade rústica com atributos espaciais e administrativos.
@@ -40,6 +41,18 @@ public class PropriedadeRustica {
     @CsvBindByName(column = "Ilha")
     private String ilha;
 
+    public PropriedadeRustica(){}
+    public PropriedadeRustica(Node node) {
+        this.objectId = node.get("objectId").asString();
+        this.parId = node.get("parId").asString("");
+        this.parNum = node.get("parNum").asString("");
+        this.shapeArea = node.get("shapeArea").asString("");
+        this.geometry = node.get("geometry").asString("");
+        this.owner = node.get("owner").asString("");
+        this.freguesia = node.get("freguesia").asString("");
+        this.municipio = node.get("municipio").asString("");
+        this.ilha = node.get("ilha").asString("");
+    }
     /**
      * @return o identificador único da propriedade
      */

@@ -13,6 +13,3 @@ ES-2024_25-2Sem-Terça-LEI-PL-K
 | Rui Lima          | 105274          | [@RuiLimaIscte ](https://github.com/RuiLimaIscte)    |
 
 
-## Funcionalidades Não Implementadas ou Incompletas
-
-- Pontos 3 a 7.

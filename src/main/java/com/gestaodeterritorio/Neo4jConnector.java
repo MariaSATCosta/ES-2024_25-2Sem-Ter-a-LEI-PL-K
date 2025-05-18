@@ -238,7 +238,7 @@ public class Neo4jConnector implements AutoCloseable {
      */
     private int inserirRelacoesProprietarios(List<String[]> novasRelacoesProprietarios) {
         try (Session session = driver.session()) {
-            int relacoesCriadas = session.writeTransaction(tx -> {
+            return session.writeTransaction(tx -> {
                 String query = "UNWIND $relacoes AS relacao " +
                         "MATCH (a:Proprietario {owner: relacao[0]}), (b:Proprietario {owner: relacao[1]}) " +
                         "MERGE (a)-[:VIZINHO_DE]->(b)" + "MERGE (b)-[:VIZINHO_DE]->(a)";
@@ -246,7 +246,6 @@ public class Neo4jConnector implements AutoCloseable {
                 ResultSummary summary = result.consume();
                 return summary.counters().relationshipsCreated();
             });
-            return relacoesCriadas;
         }
 
     }
@@ -340,16 +339,7 @@ public class Neo4jConnector implements AutoCloseable {
                 if (node.get("shapeArea").isNull() || node.get("shapeArea").asString().equalsIgnoreCase("NA")) continue;
                 if (node.get("owner").isNull() || node.get("owner").asString().equalsIgnoreCase("NA")) continue;
 
-                PropriedadeRustica propriedade = new PropriedadeRustica();
-                propriedade.setObjectId(node.get("objectId").asString());
-                propriedade.setParId(node.get("parId").asString(""));
-                propriedade.setParNum(node.get("parNum").asString(""));
-                propriedade.setShapeArea(node.get("shapeArea").asString(""));
-                propriedade.setGeometry(node.get("geometry").asString(""));
-                propriedade.setOwner(node.get("owner").asString(""));
-                propriedade.setFreguesia(node.get("freguesia").asString(""));
-                propriedade.setMunicipio(node.get("municipio").asString(""));
-                propriedade.setIlha(node.get("ilha").asString(""));
+                PropriedadeRustica propriedade = new PropriedadeRustica(node);
 
                 propriedades.add(propriedade);
             }
@@ -381,16 +371,7 @@ public class Neo4jConnector implements AutoCloseable {
                 if (node.get("municipio").isNull() || node.get("municipio").asString().equalsIgnoreCase("NA")) continue;
                 if (node.get("ilha").isNull() || node.get("ilha").asString().equalsIgnoreCase("NA")) continue;
 
-                PropriedadeRustica propriedade = new PropriedadeRustica();
-                propriedade.setObjectId(node.get("objectId").asString());
-                propriedade.setParId(node.get("parId").asString(""));
-                propriedade.setParNum(node.get("parNum").asString(""));
-                propriedade.setShapeArea(node.get("shapeArea").asString(""));
-                propriedade.setGeometry(node.get("geometry").asString(""));
-                propriedade.setOwner(node.get("owner").asString(""));
-                propriedade.setFreguesia(node.get("freguesia").asString(""));
-                propriedade.setMunicipio(node.get("municipio").asString(""));
-                propriedade.setIlha(node.get("ilha").asString(""));
+                PropriedadeRustica propriedade = new PropriedadeRustica(node);
 
                 propriedades.add(propriedade);
             }
@@ -424,16 +405,7 @@ public class Neo4jConnector implements AutoCloseable {
                 if (node.get("municipio").isNull() || node.get("municipio").asString().equalsIgnoreCase("NA")) continue;
                 if (node.get("ilha").isNull() || node.get("ilha").asString().equalsIgnoreCase("NA")) continue;
 
-                PropriedadeRustica propriedade = new PropriedadeRustica();
-                propriedade.setObjectId(node.get("objectId").asString());
-                propriedade.setParId(node.get("parId").asString(""));
-                propriedade.setParNum(node.get("parNum").asString(""));
-                propriedade.setShapeArea(node.get("shapeArea").asString(""));
-                propriedade.setGeometry(node.get("geometry").asString(""));
-                propriedade.setOwner(node.get("owner").asString(""));
-                propriedade.setFreguesia(node.get("freguesia").asString(""));
-                propriedade.setMunicipio(node.get("municipio").asString(""));
-                propriedade.setIlha(node.get("ilha").asString(""));
+                PropriedadeRustica propriedade = new PropriedadeRustica(node);
 
                 adjacentes.add(propriedade);
             }

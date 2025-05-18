@@ -5,7 +5,7 @@ import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
+import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -89,12 +89,15 @@ public class AppUITest {
         AppUI app = new AppUI(mockLogisticaAreas);
         JComboBox<String> combo = findComboBox(app);
         JTextField nomeField = findNomeField(app);
+        assert combo != null;
         combo.setSelectedItem("Ilha");
+        assert nomeField != null;
         nomeField.setText("TestIlha");
         Mockito.when(mockLogisticaAreas.mediaPorIlha("TestIlha")).thenReturn(10.5);
 
-        JButton btn = findButton(app, "Calcular Média Simples");
+        JButton btn = findButton(app);
         // Fire action
+        assert btn != null;
         btn.doClick();
 
         Mockito.verify(mockLogisticaAreas).mediaPorIlha("TestIlha");
@@ -107,12 +110,15 @@ public class AppUITest {
         AppUI app = new AppUI(mockLogisticaAreas);
         JComboBox<String> combo = findComboBox(app);
         JTextField nomeField = findNomeField(app);
+        assert combo != null;
         combo.setSelectedItem("Município");
+        assert nomeField != null;
         nomeField.setText("TestMun");
 
         Mockito.when(mockLogisticaAreas.mediaPorMunicipio("TestMun")).thenReturn(20.5);
 
-        JButton btn = findButton(app, "Calcular Média Simples");
+        JButton btn = findButton(app);
+        assert btn != null;
         btn.doClick();
 
         Mockito.verify(mockLogisticaAreas).mediaPorMunicipio("TestMun");
@@ -125,15 +131,93 @@ public class AppUITest {
         AppUI app = new AppUI(mockLogisticaAreas);
         JComboBox<String> combo = findComboBox(app);
         JTextField nomeField = findNomeField(app);
+        assert combo != null;
         combo.setSelectedItem("Freguesia");
+        assert nomeField != null;
         nomeField.setText("TestFreg");
 
         Mockito.when(mockLogisticaAreas.mediaPorFreguesia("TestFreg")).thenReturn(30.5);
 
-        JButton btn = findButton(app, "Calcular Média Simples");
+        JButton btn = findButton(app);
+        assert btn != null;
         btn.doClick();
 
         Mockito.verify(mockLogisticaAreas).mediaPorFreguesia("TestFreg");
+        app.dispose();
+    }
+    @Test
+    void calcularMediaBtn4_defaultCase() {
+        AppUI app = new AppUI(mockLogisticaAreas);
+        JComboBox<String> combo = findComboBox(app);
+        JTextField nomeField = findNomeField(app);
+        assert combo != null;
+        combo.addItem("Outro"); // adicionar valor inesperado
+        combo.setSelectedItem("Outro");
+        assert nomeField != null;
+        nomeField.setText("Invalido");
+
+        JButton btn = findButton(app);
+        assert btn != null;
+        btn.doClick();
+
+        // Nenhum método deve ser chamado
+        Mockito.verifyNoInteractions(mockLogisticaAreas);
+        app.dispose();
+    }
+    @Test
+    void calcularAgrupadaBtn1() {
+        AppUI app = new AppUI(mockLogisticaAreas);
+        JComboBox<String> combo = findComboBox(app);
+        JTextField nomeField = findNomeField(app);
+        assert combo != null;
+        combo.setSelectedItem("Ilha");
+        assert nomeField != null;
+        nomeField.setText("IlhaTeste");
+
+        Mockito.when(mockLogisticaAreas.mediaAgrupadaPorIlha("IlhaTeste")).thenReturn(42.0);
+
+        JButton btn = findButton(app, "Calcular Média Agrupada");
+        assert btn != null;
+        btn.doClick();
+
+        Mockito.verify(mockLogisticaAreas).mediaAgrupadaPorIlha("IlhaTeste");
+        app.dispose();
+    }
+    @Test
+    void gerarBtn1_simplesComResultados() {
+        AppUI app = new AppUI(mockLogisticaAreas);
+        JSpinner spinner = findSpinner(app);
+        assert spinner != null;
+        spinner.setValue(2);
+
+        var mockSugestoes = java.util.List.of(new SugestaoTroca(new PropriedadeRustica(), new PropriedadeRustica(), 8.0), new SugestaoTroca(new PropriedadeRustica(), new PropriedadeRustica(), 10.0));
+        Mockito.when(mockLogisticaAreas.sugerirTrocas(2, false)).thenReturn(mockSugestoes);
+
+        JButton gerarBtn = findButton(app, "Gerar Sugestões");
+        assert gerarBtn != null;
+        gerarBtn.doClick();
+
+        Mockito.verify(mockLogisticaAreas).sugerirTrocas(2, false);
+        app.dispose();
+    }
+    @Test
+    void gerarBtn2_complexaSemResultados() {
+        AppUI app = new AppUI(mockLogisticaAreas);
+        JRadioButton complexaRadio = findRadioButton(app, "Por Área Média/ Freguesia/ Quantidade de vizinhos");
+        assert complexaRadio != null;
+        complexaRadio.setSelected(true);
+
+        JSpinner spinner = findSpinner(app);
+        assert spinner != null;
+        spinner.setValue(3);
+
+        Mockito.when(mockLogisticaAreas.sugerirTrocas(3, true)).thenReturn(java.util.Collections.emptyList());
+
+        JButton gerarBtn = findButton(app, "Gerar Sugestões");
+        assert gerarBtn != null;
+        gerarBtn.doClick();
+
+        Mockito.verify(mockLogisticaAreas).sugerirTrocas(3, true);
         app.dispose();
     }
 
@@ -143,64 +227,50 @@ public class AppUITest {
     private JComboBox<String> findComboBox(AppUI app) {
         JPanel leftPanel = (JPanel) app.getContentPane().getComponent(0);
         for (var comp : leftPanel.getComponents()) {
-            if (comp instanceof JComboBox) {
-                return (JComboBox<String>) comp;
-            }
+            if (comp instanceof JComboBox) return (JComboBox<String>) comp;
         }
-        fail("Tipo de Região JComboBox not found");
         return null;
     }
 
     private JTextField findNomeField(AppUI app) {
         JPanel leftPanel = (JPanel) app.getContentPane().getComponent(0);
         for (var comp : leftPanel.getComponents()) {
-            if (comp instanceof JTextField) {
-                return (JTextField) comp;
-            }
+            if (comp instanceof JTextField) return (JTextField) comp;
         }
-        fail("Nome da Região JTextField not found");
         return null;
     }
 
+    private JButton findButton(AppUI app) {
+        return findButton(app, "Calcular Média Simples");
+    }
+
     private JButton findButton(AppUI app, String text) {
-        JPanel leftPanel = (JPanel) app.getContentPane().getComponent(0);
-        JPanel rightPanel = (JPanel) app.getContentPane().getComponent(1);
-        for (var comp : leftPanel.getComponents()) {
-            if (comp instanceof JButton) {
-                JButton btn = (JButton) comp;
-                if (text.equals(btn.getText())) return btn;
+        for (Component comp : app.getContentPane().getComponents()) {
+            if (comp instanceof JPanel panel) {
+                for (Component c : panel.getComponents()) {
+                    if (c instanceof JButton btn && btn.getText().equals(text)) {
+                        return btn;
+                    }
+                }
             }
         }
-        for (var comp : rightPanel.getComponents()) {
-            if (comp instanceof JButton) {
-                JButton btn = (JButton) comp;
-                if (text.equals(btn.getText())) return btn;
-            }
-        }
-        fail("Button with text '" + text + "' not found");
         return null;
     }
 
     private JSpinner findSpinner(AppUI app) {
         JPanel rightPanel = (JPanel) app.getContentPane().getComponent(1);
         for (var comp : rightPanel.getComponents()) {
-            if (comp instanceof JSpinner) {
-                return (JSpinner) comp;
-            }
+            if (comp instanceof JSpinner) return (JSpinner) comp;
         }
-        fail("JSpinner not found");
         return null;
     }
 
     private JRadioButton findRadioButton(AppUI app, String text) {
         JPanel rightPanel = (JPanel) app.getContentPane().getComponent(1);
         for (var comp : rightPanel.getComponents()) {
-            if (comp instanceof JRadioButton) {
-                JRadioButton rb = (JRadioButton) comp;
-                if (text.equals(rb.getText())) return rb;
-            }
+            if (comp instanceof JRadioButton rb && rb.getText().equals(text)) return rb;
         }
-        fail("RadioButton with text '" + text + "' not found");
         return null;
     }
+
 }

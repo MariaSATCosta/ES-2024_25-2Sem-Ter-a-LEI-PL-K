@@ -1,0 +1,330 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > PropriedadeRustica</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.gestaodeterritorio</a>
+</div>
+
+<h1>Coverage Summary for Class: PropriedadeRustica (com.gestaodeterritorio)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">PropriedadeRustica</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (23/23)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (32/32)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.gestaodeterritorio;
+&nbsp;
+&nbsp;import com.opencsv.bean.CsvBindByName;
+&nbsp;import org.neo4j.driver.types.Node;
+&nbsp;
+&nbsp;/**
+&nbsp; * Representa uma propriedade rústica com atributos espaciais e administrativos.
+&nbsp; *
+&nbsp; * Esta classe é usada para mapear diretamente os dados provenientes de um ficheiro CSV,
+&nbsp; * utilizando anotações da biblioteca OpenCSV.
+&nbsp; */
+&nbsp;public class PropriedadeRustica {
+&nbsp;
+&nbsp;    @CsvBindByName(column = &quot;OBJECTID&quot;)
+&nbsp;    private String objectId;
+&nbsp;
+&nbsp;    @CsvBindByName(column = &quot;PAR_ID&quot;)
+&nbsp;    private String parId;
+&nbsp;
+&nbsp;    @CsvBindByName(column = &quot;PAR_NUM&quot;)
+&nbsp;    private String parNum;
+&nbsp;
+&nbsp;    @CsvBindByName(column = &quot;Shape_Length&quot;)
+&nbsp;    private String shapeLength;
+&nbsp;
+&nbsp;    @CsvBindByName(column = &quot;Shape_Area&quot;)
+&nbsp;    private String shapeArea;
+&nbsp;
+&nbsp;    @CsvBindByName(column = &quot;geometry&quot;)
+&nbsp;    private String geometry;
+&nbsp;
+&nbsp;    @CsvBindByName(column = &quot;OWNER&quot;)
+&nbsp;    private String owner;
+&nbsp;
+&nbsp;    @CsvBindByName(column = &quot;Freguesia&quot;)
+&nbsp;    private String freguesia;
+&nbsp;
+&nbsp;    @CsvBindByName(column = &quot;Municipio&quot;)
+&nbsp;    private String municipio;
+&nbsp;
+&nbsp;    @CsvBindByName(column = &quot;Ilha&quot;)
+&nbsp;    private String ilha;
+&nbsp;
+<b class="fc">&nbsp;    public PropriedadeRustica(){}</b>
+<b class="fc">&nbsp;    public PropriedadeRustica(Node node) {</b>
+<b class="fc">&nbsp;        this.objectId = node.get(&quot;objectId&quot;).asString();</b>
+<b class="fc">&nbsp;        this.parId = node.get(&quot;parId&quot;).asString(&quot;&quot;);</b>
+<b class="fc">&nbsp;        this.parNum = node.get(&quot;parNum&quot;).asString(&quot;&quot;);</b>
+<b class="fc">&nbsp;        this.shapeArea = node.get(&quot;shapeArea&quot;).asString(&quot;&quot;);</b>
+<b class="fc">&nbsp;        this.geometry = node.get(&quot;geometry&quot;).asString(&quot;&quot;);</b>
+<b class="fc">&nbsp;        this.owner = node.get(&quot;owner&quot;).asString(&quot;&quot;);</b>
+<b class="fc">&nbsp;        this.freguesia = node.get(&quot;freguesia&quot;).asString(&quot;&quot;);</b>
+<b class="fc">&nbsp;        this.municipio = node.get(&quot;municipio&quot;).asString(&quot;&quot;);</b>
+<b class="fc">&nbsp;        this.ilha = node.get(&quot;ilha&quot;).asString(&quot;&quot;);</b>
+&nbsp;    }
+&nbsp;    /**
+&nbsp;     * @return o identificador único da propriedade
+&nbsp;     */
+&nbsp;    public String getObjectId() {
+<b class="fc">&nbsp;        return objectId;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @return o identificador do parcela
+&nbsp;     */
+&nbsp;    public String getParId() {
+<b class="fc">&nbsp;        return parId;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @return o número da parcela
+&nbsp;     */
+&nbsp;    public String getParNum() {
+<b class="fc">&nbsp;        return parNum;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @return o perímetro da geometria da propriedade
+&nbsp;     */
+&nbsp;    public String getShapeLength() {
+<b class="fc">&nbsp;        return shapeLength;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @return a área da propriedade
+&nbsp;     */
+&nbsp;    public String getShapeArea() {
+<b class="fc">&nbsp;        return shapeArea;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @return a geometria da propriedade em formato WKT
+&nbsp;     */
+&nbsp;    public String getGeometry() {
+<b class="fc">&nbsp;        return geometry;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @return o nome do proprietário
+&nbsp;     */
+&nbsp;    public String getOwner() {
+<b class="fc">&nbsp;        return owner;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @return a freguesia onde a propriedade se encontra
+&nbsp;     */
+&nbsp;    public String getFreguesia() {
+<b class="fc">&nbsp;        return freguesia;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @return o município da propriedade
+&nbsp;     */
+&nbsp;    public String getMunicipio() {
+<b class="fc">&nbsp;        return municipio;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * @return a ilha onde a propriedade se situa (ex: Madeira)
+&nbsp;     */
+&nbsp;    public String getIlha() {
+<b class="fc">&nbsp;        return ilha;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Define o identificador único da propriedade.
+&nbsp;     *
+&nbsp;     * @param objectId identificador da propriedade
+&nbsp;     */
+&nbsp;    public void setObjectId(String objectId) {
+<b class="fc">&nbsp;        this.objectId = objectId;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Define o identificador da parcela.
+&nbsp;     *
+&nbsp;     * @param parId identificador da parcela
+&nbsp;     */
+&nbsp;    public void setParId(String parId) {
+<b class="fc">&nbsp;        this.parId = parId;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Define o número da parcela.
+&nbsp;     *
+&nbsp;     * @param parNum número da parcela
+&nbsp;     */
+&nbsp;    public void setParNum(String parNum) {
+<b class="fc">&nbsp;        this.parNum = parNum;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Define o comprimento da geometria da propriedade.
+&nbsp;     *
+&nbsp;     * @param shapeLength comprimento da geometria
+&nbsp;     */
+&nbsp;    public void setShapeLength(String shapeLength) {
+<b class="fc">&nbsp;        this.shapeLength = shapeLength;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Define a área da propriedade.
+&nbsp;     *
+&nbsp;     * @param shapeArea área da propriedade
+&nbsp;     */
+&nbsp;    public void setShapeArea(String shapeArea) {
+<b class="fc">&nbsp;        this.shapeArea = shapeArea;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Define a geometria da propriedade no formato WKT.
+&nbsp;     *
+&nbsp;     * @param geometry geometria da propriedade
+&nbsp;     */
+&nbsp;    public void setGeometry(String geometry) {
+<b class="fc">&nbsp;        this.geometry = geometry;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Define o nome do proprietário da propriedade.
+&nbsp;     *
+&nbsp;     * @param owner nome do proprietário
+&nbsp;     */
+&nbsp;    public void setOwner(String owner) {
+<b class="fc">&nbsp;        this.owner = owner;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Define a freguesia da propriedade.
+&nbsp;     *
+&nbsp;     * @param freguesia freguesia onde se localiza a propriedade
+&nbsp;     */
+&nbsp;    public void setFreguesia(String freguesia) {
+<b class="fc">&nbsp;        this.freguesia = freguesia;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Define a ilha onde a propriedade se localiza.
+&nbsp;     *
+&nbsp;     * @param ilha nome da ilha
+&nbsp;     */
+&nbsp;    public void setIlha(String ilha) {
+<b class="fc">&nbsp;        this.ilha = ilha;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Define o município da propriedade.
+&nbsp;     *
+&nbsp;     * @param municipio nome do município
+&nbsp;     */
+&nbsp;    public void setMunicipio(String municipio) {
+<b class="fc">&nbsp;        this.municipio = municipio;</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Representação textual formatada da propriedade rústica.
+&nbsp;     *
+&nbsp;     * @return string com os principais dados da propriedade
+&nbsp;     */
+&nbsp;    @Override
+&nbsp;    public String toString() {
+<b class="fc">&nbsp;        return String.format(&quot;[%s] %s - %s - %s (Área: %s) [%s]&quot;,</b>
+&nbsp;                objectId, municipio, freguesia, parNum, shapeArea, ilha);
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-05-18 02:03</div>
+</div>
+</body>
+</html>

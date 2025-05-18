@@ -1,12 +1,8 @@
 package com.gestaodeterritorio;
 
-import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import java.io.InputStreamReader;
 import java.io.InputStream;
-import java.util.Objects;
-import java.io.FileReader;
-import java.io.Reader;
 import java.util.List;
 
 /**
@@ -21,9 +17,8 @@ public class CadastroLoader {
      *
      * @param nomeFicheiro o nome do ficheiro CSV localizado em {@code src/main/resources}
      * @return uma lista de objetos {@code PropriedadeRustica} com base nos dados do ficheiro
-     * @throws Exception se o ficheiro não for encontrado ou se ocorrer algum erro durante a leitura
      */
-    public List<PropriedadeRustica> carregar(String nomeFicheiro) throws Exception {
+    public List<PropriedadeRustica> carregar(String nomeFicheiro) {
         InputStream input = getClass().getClassLoader().getResourceAsStream(nomeFicheiro);
 
         if (input == null) {
